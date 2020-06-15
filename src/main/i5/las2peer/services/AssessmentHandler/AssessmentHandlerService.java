@@ -51,7 +51,7 @@ import java.util.Iterator;
 @Api
 @SwaggerDefinition(
 		info = @Info(
-				title = "Assessment Service",
+				title = "Assessment-Handler-Service",
 				version = "1.0.0",
 				description = "A las2peer Template Service for demonstration purposes.",
 				termsOfService = "none",
@@ -62,7 +62,7 @@ import java.util.Iterator;
 				license = @License(
 						name = "",
 						url = "")))
-@ServicePath("/Assessment")
+@ServicePath("/AssessmentHandler")
 // TODO Your own service class
 public class AssessmentHandlerService extends RESTService {
     // Used for keeping context between assessment and non-assessment states
@@ -87,7 +87,7 @@ public class AssessmentHandlerService extends RESTService {
 	@POST
 	@Path("/assessment")
 	@Consumes(MediaType.TEXT_PLAIN)
-	@Produces(MediaType.TEXT_PLAIN)
+	@Produces(MediaType.APPLICATION_JSON)
 	@ApiOperation(
 			value = "REPLACE THIS WITH AN APPROPRIATE FUNCTION NAME",
 			notes = "REPLACE THIS WITH YOUR NOTES TO THE FUNCTION")
@@ -100,23 +100,27 @@ public class AssessmentHandlerService extends RESTService {
 		try {
 			JSONObject bodyJson = (JSONObject) p.parse(body);		
 			System.out.println(bodyJson);
+			JSONObject response = new JSONObject();
 			String channel = bodyJson.getAsString("channel");
 			if(this.assessmentStarted.get(channel) == null){
 				System.out.println("I am inside");
-				JSONArray jsonAssessment = (JSONArray) bodyJson.get("Assessments");
+				JSONArray jsonAssessment = (JSONArray) bodyJson.get("bodyContent");
 				ArrayList<String> assessment = new ArrayList<String>();
 				if(jsonAssessment != null) {
-					System.out.println("I am inside2");
+					System.out.println("I am inside 2");
 					int len = jsonAssessment.size();
 					for(int i=0; i<len ; i++){
 						assessment.add(jsonAssessment.get(i).toString());
 					}
 					JSONObject contentJson;
 					for(String content : assessment) {
+						System.out.println(content);
 						 contentJson = (JSONObject) p.parse(content);
 						if(contentJson.getAsString("topic").equals(bodyJson.getAsString("topic"))){
 							setUpAssessment(contentJson, channel);
-							return Response.ok().entity("We will now start the assessment on "+ bodyJson.getAsString("topic") + "\n" +this.currAssessment.get(channel)[0][1]).build(); 
+							response.put("text", "We will now start the assessment on "+ bodyJson.getAsString("topic") + "\n" +this.currAssessment.get(channel)[0][1]);
+							response.put("closeContext", "false");
+							return Response.ok().entity(response).build(); 
 						}
 					}
 					
@@ -180,25 +184,28 @@ public class AssessmentHandlerService extends RESTService {
   		
 	}
 	
-    private String continueAssessment(String channel, String intent){
-    	String response = "";
-    
+    private JSONObject continueAssessment(String channel, String intent){
+    	JSONObject response = new JSONObject();
+    	String answer = "";
+    	response.put("closeContext", "false");
         System.out.println(this.currQuestion.get(channel));
         System.out.println(this.currAssessment.get(channel)[this.currQuestion.get(channel)][2]);
         if(intent.equals(this.currAssessment.get(channel)[this.currQuestion.get(channel)][2])){
-            response += "Correct Answer! \n";
+            answer += "Correct Answer! \n";
             this.score.put(channel, this.score.get(channel) + 1 );
         } else {
-        	response += "Wrong Answer:/ \n";
+        	answer += "Wrong Answer:/ \n";
         	this.currCorrectQuestions.put(channel, this.currCorrectQuestions.get(channel) + this.currAssessment.get(channel)[this.currQuestion.get(channel)][1] + "\n");
         }
         this.currQuestion.put(channel,this.currQuestion.get(channel)+1);
         if(this.currQuestion.get(channel)==this.currAssessment.get(channel).length){
-            response += "Assessment is over \n" + "You got " + this.score.get(channel) + "/" + this.currAssessment.get(channel).length + "Questions right! \n You got following Questions wrong: \n " + this.currCorrectQuestions.get(channel);
+            answer += "Assessment is over \n" + "You got " + this.score.get(channel) + "/" + this.currAssessment.get(channel).length + "Questions right! \n You got following Questions wrong: \n " + this.currCorrectQuestions.get(channel);
             this.assessmentStarted.put(channel, null);
+            response.put("closeContext", "true");
         } else {
-            response += this.currAssessment.get(channel)[this.currQuestion.get(channel)][1];        
+            answer += this.currAssessment.get(channel)[this.currQuestion.get(channel)][1];        
         }
+        response.put("text", answer);
        return response;
 	
     }
