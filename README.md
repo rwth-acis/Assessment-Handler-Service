@@ -1,4 +1,7 @@
-<p align="center">
+    	<ivy:cachepath pathid="complile.path">
+    		<dependency org="org.jsoup" name="jsoup" rev="1.8.1" conf="default">
+    		</dependency>
+    	</ivy:cachepath>	<p align="center">
   <img src="https://raw.githubusercontent.com/rwth-acis/las2peer/master/img/logo/bitmap/las2peer-logo-128x128.png" />
 </p>
 <h1 align="center">las2peer-Template-Project</h1>

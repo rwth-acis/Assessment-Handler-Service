@@ -2,6 +2,7 @@ package i5.las2peer.services.AssessmentHandler;
 
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 
 import javax.ws.rs.GET;
@@ -12,8 +13,12 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import org.apache.commons.lang3.StringUtils;
+
 import i5.las2peer.api.Context;
 import i5.las2peer.api.security.UserAgent;
+import i5.las2peer.connectors.webConnector.client.ClientResponse;
+import i5.las2peer.connectors.webConnector.client.MiniClient;
 import i5.las2peer.restMapper.RESTService;
 import i5.las2peer.restMapper.annotations.ServicePath;
 import io.swagger.annotations.Api;
@@ -35,6 +40,9 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Iterator;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 
 // TODO Describe your own service
 /**
@@ -127,7 +135,7 @@ public class AssessmentHandlerService extends RESTService {
 				}
 
 			} else {
-				return Response.ok().entity(continueAssessment(channel, bodyJson.getAsString("intent"))).build();
+				return Response.ok().entity(continueAssessment(channel, bodyJson.getAsString("intent"), bodyJson, "NLUAssessment")).build();
 			}		
 			
 		} catch (ParseException e) {
@@ -170,12 +178,11 @@ public class AssessmentHandlerService extends RESTService {
             }
         }      
         // to do  :create array and sort it
-        int[] sequence = new int[length];
+        Arrays.sort(assessmentContent, (a, b) -> Integer.compare(Integer.parseInt(a[0]), Integer.parseInt(b[0])));
         this.currAssessment.put(channel, assessmentContent);
         this.currQuestion.put(channel, 0);
         this.currCorrectQuestions.put(channel, ""); 
         this.score.put(channel, 0);
-        System.out.println("Curr number is :" + this.currQuestion.get(channel));
         for(int i = 0; i < length ; i++){
             System.out.println(assessmentContent[i][0] + " " + assessmentContent[i][1] + " " + assessmentContent[i][2] + " " + assessmentContent[i][3]);
         } 
@@ -184,7 +191,7 @@ public class AssessmentHandlerService extends RESTService {
   		
 	}
 	
-    private JSONObject continueAssessment(String channel, String intent){
+    private JSONObject continueAssessment(String channel, String intent, JSONObject triggeredBody, String assessmentType){
     	JSONObject response = new JSONObject();
     	String answer = "";
     	response.put("closeContext", "false");
@@ -209,6 +216,79 @@ public class AssessmentHandlerService extends RESTService {
        return response;
 	
     }
+    
+    @POST
+	@Path("/moodle")
+    @Consumes(MediaType.TEXT_PLAIN)
+	@Produces(MediaType.APPLICATION_JSON)
+	@ApiOperation(
+			value = "REPLACE THIS WITH AN APPROPRIATE FUNCTION NAME",
+			notes = "REPLACE THIS WITH YOUR NOTES TO THE FUNCTION")
+	@ApiResponses(
+			value = { @ApiResponse(
+					code = HttpURLConnection.HTTP_OK,
+					message = "REPLACE THIS WITH YOUR OK MESSAGE") })
+	public Response moodle(String body) throws ParseException {
+    	System.out.println(body);
+		JSONParser p = new JSONParser(JSONParser.MODE_PERMISSIVE);
+		JSONObject triggeredBody = (JSONObject) p.parse(body);
+		String channel = triggeredBody.getAsString("channel");
+		if(assessmentStarted.get(channel) == null) {
+			String wstoken = triggeredBody.getAsString("wstoken");
+			String id = triggeredBody.getAsString("quizid");  
+			String attemptId = "";
+			MiniClient client = new MiniClient();
+			client.setConnectorEndpoint(triggeredBody.getAsString("LMSURL"));
+			System.out.println("Now connecting");
+			HashMap<String, String> headers = new HashMap<String, String>();
+			ClientResponse result = client.sendRequest("GET", "/webservice/rest/server.php?wstoken=" + wstoken + "&wsfunction=mod_quiz_start_attempt&quizid=" + id + "&moodlewsrestformat=json" , "",
+					"", MediaType.APPLICATION_JSON, headers);
+	        System.out.println("Connect Success");
+	        System.out.println(result.getResponse());
+	        JSONObject res = (JSONObject) p.parse(result.getResponse());
+	        attemptId = ((JSONObject) res.get("attempt")).getAsString("id");
+	        result = client.sendRequest("GET", "/webservice/rest/server.php?wstoken=" + wstoken + "&wsfunction=mod_quiz_process_attempt&attemptid=" + attemptId + "&finishattempt=1&moodlewsrestformat=json" , "",
+					"", MediaType.APPLICATION_JSON, headers);
+	        System.out.println(result.getResponse());
+	        result = client.sendRequest("GET", "/webservice/rest/server.php?wstoken=" + wstoken + "&wsfunction=mod_quiz_get_attempt_review&attemptid=" + attemptId + "&page=-1&moodlewsrestformat=json" , "",
+					"", MediaType.APPLICATION_JSON, headers);
+	        res = (JSONObject) p.parse(result.getResponse());
+	        String html = "";
+	        Document doc = Jsoup.parse("<html></html>");
+	        String questions = "";
+	        String answers = "";
+	        String[][] assessment = new String[((JSONArray) res.get("questions")).size()][2];
+	        for(int i = 0 ; i < ((JSONArray) res.get("questions")).size() ; i++) {
+	        	html =  ((JSONObject)((JSONArray) res.get("questions")).get(i)).getAsString("html");
+	        	doc = Jsoup.parse(html);
+	        //	if(((JSONObject)((JSONArray) res.get("questions")).get(i)).getAsString("type") == "truefalse") {
+	        	// differentiate between true false and others, bcs for tf right answers are written  : the right answer is '' , whereas for other the ight answer is : 
+	        		questions += doc.getElementsByClass("qtext").text() + "\n";
+	        		assessment[i][0] = doc.getElementsByClass("qtext").text();
+	        		System.out.println(doc.getElementsByClass("qtext").text());
+	       	//}		// to differentiate between questions with one answer and questions with multiple correct answers
+	        		if(doc.getElementsByClass("rightanswer").text().contains("answers")) {
+	        			answers += doc.getElementsByClass("rightanswer").text().split("The correct answers are")[1] +"\n";
+	        			assessment[i][1] = doc.getElementsByClass("rightanswer").text().split("The correct answers are")[1];
+	        		} else {
+	        			answers += doc.getElementsByClass("rightanswer").text().split("The correct answer is")[1] +"\n";
+	        			assessment[i][1] = doc.getElementsByClass("rightanswer").text().split("The correct answer is")[1];
+	        		}
+	        		
+	        }
+	        currAssessment.put(triggeredBody.getAsString("channel"), assessment);
+	        JSONObject response = new JSONObject();
+	        response.put("text", "We will now start the moodle quiz :) \n " + assessment[0][0]);
+	        response.put("closeContext" , "false");
+	        return Response.ok().entity(response).build();
+		} else {
+			return Response.ok().entity(continueAssessment(channel, "", triggeredBody, "moodle")).build();
+			
+			
+		}  
+	}   
+    
+    
 
 
 }
