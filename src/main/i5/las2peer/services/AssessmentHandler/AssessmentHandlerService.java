@@ -43,6 +43,8 @@ import java.util.Iterator;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 // TODO Describe your own service
 /**
@@ -91,6 +93,8 @@ public class AssessmentHandlerService extends RESTService {
     // Used for asking the questions in the right order
     private static HashMap<String, Integer> questionsAsked = new HashMap<String, Integer>();   
     
+    private static String quitIntent = "";
+    private static String helpIntent = "";
     
 	@POST
 	@Path("/assessment")
@@ -197,24 +201,60 @@ public class AssessmentHandlerService extends RESTService {
     	response.put("closeContext", "false");
         System.out.println(this.currQuestion.get(channel));
         System.out.println(this.currAssessment.get(channel)[this.currQuestion.get(channel)][2]);
-        if(intent.equals(this.currAssessment.get(channel)[this.currQuestion.get(channel)][2])){
-            answer += "Correct Answer! \n";
-            this.score.put(channel, this.score.get(channel) + 1 );
+        if(assessmentType == "NLUAssessment") {
+	        if(intent.equals(quitIntent)) {
+	        	answer += "Assessment is over \n" + "You got " + this.score.get(channel) + "/" + this.currAssessment.get(channel).length + "Questions right! \n You got following Questions wrong: \n " + this.currCorrectQuestions.get(channel);
+	            this.assessmentStarted.put(channel, null);
+	            response.put("closeContext", "true");
+	        } else { 
+		        if(intent.equals(this.currAssessment.get(channel)[this.currQuestion.get(channel)][2])){
+		            answer += "Correct Answer! \n";
+		            this.score.put(channel, this.score.get(channel) + 1 );
+		        } else {
+		        	answer += "Wrong Answer:/ \n";
+		        	this.currCorrectQuestions.put(channel, this.currCorrectQuestions.get(channel) + this.currAssessment.get(channel)[this.currQuestion.get(channel)][1] + "\n");
+		        }
+		        this.currQuestion.put(channel,this.currQuestion.get(channel)+1);
+		        if(this.currQuestion.get(channel)==this.currAssessment.get(channel).length){
+		            answer += "Assessment is over \n" + "You got " + this.score.get(channel) + "/" + this.currAssessment.get(channel).length + "Questions right! \n You got following Questions wrong: \n " + this.currCorrectQuestions.get(channel);
+		            this.assessmentStarted.put(channel, null);
+		            response.put("closeContext", "true");
+		        } else {
+		            answer += this.currAssessment.get(channel)[this.currQuestion.get(channel)][1];        
+		        }
+	        }
+	        
+        } else if(assessmentType == "moodleAssessment") {
+	        if(intent.equals(quitIntent)) {
+	        	answer += "Assessment is over \n" + "You got " + this.score.get(channel) + "/" + this.currAssessment.get(channel).length + "Questions right! \n You got following Questions wrong: \n " + this.currCorrectQuestions.get(channel);
+	            this.assessmentStarted.put(channel, null);
+	            response.put("closeContext", "true");
+	        } else { 
+	        	String msg = triggeredBody.getAsString("msg");
+	        	// differ between true false / multiple answers, one answer 
+	        	// for multiple choice split with "," to have all the answers
+	        	System.out.println(this.currAssessment.get(channel)[this.currQuestion.get(channel)][1] + "  " + msg);
+		        if(this.currAssessment.get(channel)[this.currQuestion.get(channel)][1].toLowerCase().contains(msg.toLowerCase())){
+		            answer += "Correct Answer! \n";
+		            this.score.put(channel, this.score.get(channel) + 1 );
+		        } else {
+		        	answer += "Wrong Answer:/ \n";
+		        	this.currCorrectQuestions.put(channel, this.currCorrectQuestions.get(channel) + this.currAssessment.get(channel)[this.currQuestion.get(channel)][0] + "\n");
+		        }
+		        this.currQuestion.put(channel,this.currQuestion.get(channel)+1);
+		        if(this.currQuestion.get(channel)==this.currAssessment.get(channel).length){
+		            answer += "Assessment is over \n" + "You got " + this.score.get(channel) + "/" + this.currAssessment.get(channel).length + "Questions right! \n You got following Questions wrong: \n " + this.currCorrectQuestions.get(channel);
+		            this.assessmentStarted.put(channel, null);
+		            response.put("closeContext", "true");
+		        } else {
+		            answer += this.currAssessment.get(channel)[this.currQuestion.get(channel)][0];        
+		        }
+	        }
         } else {
-        	answer += "Wrong Answer:/ \n";
-        	this.currCorrectQuestions.put(channel, this.currCorrectQuestions.get(channel) + this.currAssessment.get(channel)[this.currQuestion.get(channel)][1] + "\n");
-        }
-        this.currQuestion.put(channel,this.currQuestion.get(channel)+1);
-        if(this.currQuestion.get(channel)==this.currAssessment.get(channel).length){
-            answer += "Assessment is over \n" + "You got " + this.score.get(channel) + "/" + this.currAssessment.get(channel).length + "Questions right! \n You got following Questions wrong: \n " + this.currCorrectQuestions.get(channel);
-            this.assessmentStarted.put(channel, null);
-            response.put("closeContext", "true");
-        } else {
-            answer += this.currAssessment.get(channel)[this.currQuestion.get(channel)][1];        
+        	System.out.println("Assessment type: "+ assessmentType + " not known");
         }
         response.put("text", answer);
-       return response;
-	
+        return response;
     }
     
     @POST
@@ -257,32 +297,51 @@ public class AssessmentHandlerService extends RESTService {
 	        Document doc = Jsoup.parse("<html></html>");
 	        String questions = "";
 	        String answers = "";
-	        String[][] assessment = new String[((JSONArray) res.get("questions")).size()][2];
+	        String[][] assessment = new String[((JSONArray) res.get("questions")).size()][3];
 	        for(int i = 0 ; i < ((JSONArray) res.get("questions")).size() ; i++) {
 	        	html =  ((JSONObject)((JSONArray) res.get("questions")).get(i)).getAsString("html");
 	        	doc = Jsoup.parse(html);
 	        //	if(((JSONObject)((JSONArray) res.get("questions")).get(i)).getAsString("type") == "truefalse") {
 	        	// differentiate between true false and others, bcs for tf right answers are written  : the right answer is '' , whereas for other the ight answer is : 
 	        		questions += doc.getElementsByClass("qtext").text() + "\n";
-	        		assessment[i][0] = doc.getElementsByClass("qtext").text();
+	        		assessment[i][0] = doc.getElementsByClass("qtext").text() +"\n";
+	        		assessment[i][2] = ((JSONObject)((JSONArray) res.get("questions")).get(i)).getAsString("type");
 	        		System.out.println(doc.getElementsByClass("qtext").text());
 	       	//}		// to differentiate between questions with one answer and questions with multiple correct answers
 	        		if(doc.getElementsByClass("rightanswer").text().contains("answers")) {
+	        			assessment[i][0] += "Select one or more:\n";
 	        			answers += doc.getElementsByClass("rightanswer").text().split("The correct answers are")[1] +"\n";
 	        			assessment[i][1] = doc.getElementsByClass("rightanswer").text().split("The correct answers are")[1];
 	        		} else {
+	        			assessment[i][0] += "Select one:\n";
 	        			answers += doc.getElementsByClass("rightanswer").text().split("The correct answer is")[1] +"\n";
 	        			assessment[i][1] = doc.getElementsByClass("rightanswer").text().split("The correct answer is")[1];
 	        		}
+	        		System.out.println(assessment[i][2]);
+	        		if(assessment[i][2].equals("multichoice") || assessment[i][2].equals("truefalse")) {
+	        			System.out.println("K");
+	        			// check if answers or answer here ? 
+	        			Elements multiChoiceAnswers = doc.getElementsByClass("ml-1");
+	        			for(Element item : multiChoiceAnswers) {
+	        				assessment[i][0] += item.text() + "\n";
+	        				System.out.println(item.text() + "\n");
+	        			}
+	        			
+	        			
+	        		}
 	        		
 	        }
-	        currAssessment.put(triggeredBody.getAsString("channel"), assessment);
+	        this.currQuestion.put(triggeredBody.getAsString("channel"), 0);
+	        this.currAssessment.put(triggeredBody.getAsString("channel"), assessment);
+	        this.currCorrectQuestions.put(channel, ""); 
 	        JSONObject response = new JSONObject();
 	        response.put("text", "We will now start the moodle quiz :) \n " + assessment[0][0]);
 	        response.put("closeContext" , "false");
+	        this.score.put(channel, 0);
+	        assessmentStarted.put(channel,"true");
 	        return Response.ok().entity(response).build();
 		} else {
-			return Response.ok().entity(continueAssessment(channel, "", triggeredBody, "moodle")).build();
+			return Response.ok().entity(continueAssessment(channel, triggeredBody.getAsString("intent"), triggeredBody, "moodleAssessment")).build();
 			
 			
 		}  
