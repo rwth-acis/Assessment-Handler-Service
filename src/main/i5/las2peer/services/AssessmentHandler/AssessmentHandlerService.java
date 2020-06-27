@@ -84,6 +84,8 @@ public class AssessmentHandlerService extends RESTService {
     // Used to keep the assessment that is currently being done
     // Key is the channelId 
     private static HashMap<String, String[][]> currAssessment = new HashMap<String, String[][]>();
+    private static HashMap<String, JSONObject> Assessment = new HashMap<String, JSONObject>();
+    
     // Used to keep track of the # of correct answers
     private static HashMap<String, Integer> currPoints = new HashMap<String, Integer>();
     // Used to keep track on which Questions were answered wrongly
@@ -115,11 +117,10 @@ public class AssessmentHandlerService extends RESTService {
 			JSONObject response = new JSONObject();
 			String channel = bodyJson.getAsString("channel");
 			if(this.assessmentStarted.get(channel) == null){
-				System.out.println("I am inside");
-				JSONArray jsonAssessment = (JSONArray) bodyJson.get("bodyContent");
+				// function needs assessmentContent parameter
+				JSONArray jsonAssessment = (JSONArray) bodyJson.get("assessmentContent");
 				ArrayList<String> assessment = new ArrayList<String>();
 				if(jsonAssessment != null) {
-					System.out.println("I am inside 2");
 					int len = jsonAssessment.size();
 					for(int i=0; i<len ; i++){
 						assessment.add(jsonAssessment.get(i).toString());
@@ -130,6 +131,7 @@ public class AssessmentHandlerService extends RESTService {
 						 contentJson = (JSONObject) p.parse(content);
 						if(contentJson.getAsString("topic").equals(bodyJson.getAsString("topic"))){
 							setUpAssessment(contentJson, channel);
+							//setUpJSONAssessment(contentJson, channel);
 							response.put("text", "We will now start the assessment on "+ bodyJson.getAsString("topic") + "\n" +this.currAssessment.get(channel)[0][1]);
 							response.put("closeContext", "false");
 							return Response.ok().entity(response).build(); 
@@ -146,8 +148,7 @@ public class AssessmentHandlerService extends RESTService {
 			e.printStackTrace();
 		}	
 
-        System.out.println("Connect Success");
-		return Response.ok().entity("test").build();
+		return Response.ok().entity("Something went wrong").build();
 
 	}	
 	
@@ -161,12 +162,14 @@ public class AssessmentHandlerService extends RESTService {
         int max = 0;
         String[][] assessmentContent = new String[length][4];
         for(int i = 0; i < length ; i++){
-            if(Sequence.get(i)==""){
-                noNum++;    
-            }
-            if(Integer.parseInt(Sequence.get(i).toString()) > max){
+            if(Sequence.get(i).equals("")){
+                noNum++;   
+            } else if(Integer.parseInt(Sequence.get(i).toString()) > max){
                 max = Integer.parseInt(Sequence.get(i).toString());    
-            }            
+            } else if(Integer.parseInt(Sequence.get(i).toString()) == max) {
+            	Sequence.add(i, String.valueOf(max+1));
+            	max++;
+            }           
             assessmentContent[i][0] = Sequence.get(i).toString();
             assessmentContent[i][1] = Questions.get(i).toString();
             assessmentContent[i][2] = Intents.get(i).toString();
@@ -176,12 +179,11 @@ public class AssessmentHandlerService extends RESTService {
         // to fill out the blank sequence slots
         // last blank space will be at last place
         for(int i = length-1; i >= 0 ; i--){
-            if(assessmentContent[i][0] == ""){
+            if(assessmentContent[i][0].equals("")){
             	assessmentContent[i][0] = Integer.toString(max + noNum);
             	noNum--;
             }
         }      
-        // to do  :create array and sort it
         Arrays.sort(assessmentContent, (a, b) -> Integer.compare(Integer.parseInt(a[0]), Integer.parseInt(b[0])));
         this.currAssessment.put(channel, assessmentContent);
         this.currQuestion.put(channel, 0);
@@ -190,6 +192,54 @@ public class AssessmentHandlerService extends RESTService {
         for(int i = 0; i < length ; i++){
             System.out.println(assessmentContent[i][0] + " " + assessmentContent[i][1] + " " + assessmentContent[i][2] + " " + assessmentContent[i][3]);
         } 
+        this.quitIntent = content.getAsString("QuitIntent");
+        this.assessmentStarted.put(channel, "true");	
+        System.out.println(channel);
+  		
+	}
+	
+	
+	private void setUpJSONAssessment(JSONObject content , String channel) {
+        int noNum = 0;
+        JSONArray Sequence =(JSONArray) content.get("Sequence");
+        JSONArray Questions =(JSONArray) content.get("Questions");
+        JSONArray Intents =(JSONArray) content.get("Intents");
+        JSONArray Hints =(JSONArray) content.get("Hints");
+        int length = Questions.size(); 
+        int max = 0;
+        String[][] assessmentContent = new String[length][4];
+        for(int i = 0; i < length ; i++){
+            if(Sequence.get(i).equals("")){
+                noNum++;   
+            } else if(Integer.parseInt(Sequence.get(i).toString()) > max){
+                max = Integer.parseInt(Sequence.get(i).toString());    
+            } else if(Integer.parseInt(Sequence.get(i).toString()) == max) {
+            	Sequence.add(i, String.valueOf(max+1));
+            	max++;
+            }           
+            assessmentContent[i][0] = Sequence.get(i).toString();
+            assessmentContent[i][1] = Questions.get(i).toString();
+            assessmentContent[i][2] = Intents.get(i).toString();
+            assessmentContent[i][3] = Hints.get(i).toString();     
+        }
+        
+        // to fill out the blank sequence slots
+        // last blank space will be at last place
+        for(int i = length-1; i >= 0 ; i--){
+            if(assessmentContent[i][0].equals("")){
+            	assessmentContent[i][0] = Integer.toString(max + noNum);
+            	noNum--;
+            }
+        }      
+        Arrays.sort(assessmentContent, (a, b) -> Integer.compare(Integer.parseInt(a[0]), Integer.parseInt(b[0])));
+        this.currAssessment.put(channel, assessmentContent);
+        this.currQuestion.put(channel, 0);
+        this.currCorrectQuestions.put(channel, ""); 
+        this.score.put(channel, 0);
+        for(int i = 0; i < length ; i++){
+            System.out.println(assessmentContent[i][0] + " " + assessmentContent[i][1] + " " + assessmentContent[i][2] + " " + assessmentContent[i][3]);
+        } 
+        this.quitIntent = content.getAsString("QuitIntent");
         this.assessmentStarted.put(channel, "true");	
         System.out.println(channel);
   		
@@ -239,7 +289,7 @@ public class AssessmentHandlerService extends RESTService {
 		            this.score.put(channel, this.score.get(channel) + 1 );
 		        } else {
 		        	answer += "Wrong Answer:/ \n";
-		        	this.currCorrectQuestions.put(channel, this.currCorrectQuestions.get(channel) + this.currAssessment.get(channel)[this.currQuestion.get(channel)][0] + "\n");
+		        	this.currCorrectQuestions.put(channel, this.currCorrectQuestions.get(channel) + this.currAssessment.get(channel)[this.currQuestion.get(channel)][0]  + "\n");
 		        }
 		        this.currQuestion.put(channel,this.currQuestion.get(channel)+1);
 		        if(this.currQuestion.get(channel)==this.currAssessment.get(channel).length){
@@ -247,7 +297,7 @@ public class AssessmentHandlerService extends RESTService {
 		            this.assessmentStarted.put(channel, null);
 		            response.put("closeContext", "true");
 		        } else {
-		            answer += this.currAssessment.get(channel)[this.currQuestion.get(channel)][0];        
+		            answer += this.currAssessment.get(channel)[this.currQuestion.get(channel)][0] + this.currAssessment.get(channel)[this.currQuestion.get(channel)][3];        
 		        }
 	        }
         } else {
@@ -270,82 +320,139 @@ public class AssessmentHandlerService extends RESTService {
 					message = "REPLACE THIS WITH YOUR OK MESSAGE") })
 	public Response moodle(String body) throws ParseException {
     	System.out.println(body);
+    	// set to trtue at the end 
 		JSONParser p = new JSONParser(JSONParser.MODE_PERMISSIVE);
 		JSONObject triggeredBody = (JSONObject) p.parse(body);
 		String channel = triggeredBody.getAsString("channel");
+		String wstoken = triggeredBody.getAsString("wstoken");
+		String courseid = triggeredBody.getAsString("courseId");
+		String quizid="";
+		String attemptId = "";
+		String topicName = triggeredBody.getAsString("topic");
 		if(assessmentStarted.get(channel) == null) {
-			String wstoken = triggeredBody.getAsString("wstoken");
-			String id = triggeredBody.getAsString("quizid");  
-			String attemptId = "";
+			if(topicName == null) {
+				JSONObject error = new JSONObject();
+				error.put("text", "No topic name was recognized.");
+		        error.put("closeContext" , "true");
+		        return Response.ok().entity(error).build();
+			}
 			MiniClient client = new MiniClient();
 			client.setConnectorEndpoint(triggeredBody.getAsString("LMSURL"));
 			System.out.println("Now connecting");
 			HashMap<String, String> headers = new HashMap<String, String>();
-			ClientResponse result = client.sendRequest("GET", "/webservice/rest/server.php?wstoken=" + wstoken + "&wsfunction=mod_quiz_start_attempt&quizid=" + id + "&moodlewsrestformat=json" , "",
+			ClientResponse result = client.sendRequest("GET", "/webservice/rest/server.php?wstoken=" + wstoken + "&wsfunction=core_course_get_contents&courseid=" + courseid + "&moodlewsrestformat=json" , "",
 					"", MediaType.APPLICATION_JSON, headers);
-	        System.out.println("Connect Success");
-	        System.out.println(result.getResponse());
-	        JSONObject res = (JSONObject) p.parse(result.getResponse());
-	        attemptId = ((JSONObject) res.get("attempt")).getAsString("id");
-	        result = client.sendRequest("GET", "/webservice/rest/server.php?wstoken=" + wstoken + "&wsfunction=mod_quiz_process_attempt&attemptid=" + attemptId + "&finishattempt=1&moodlewsrestformat=json" , "",
-					"", MediaType.APPLICATION_JSON, headers);
-	        System.out.println(result.getResponse());
-	        result = client.sendRequest("GET", "/webservice/rest/server.php?wstoken=" + wstoken + "&wsfunction=mod_quiz_get_attempt_review&attemptid=" + attemptId + "&page=-1&moodlewsrestformat=json" , "",
-					"", MediaType.APPLICATION_JSON, headers);
-	        res = (JSONObject) p.parse(result.getResponse());
-	        String html = "";
-	        Document doc = Jsoup.parse("<html></html>");
-	        String questions = "";
-	        String answers = "";
-	        String[][] assessment = new String[((JSONArray) res.get("questions")).size()][3];
-	        for(int i = 0 ; i < ((JSONArray) res.get("questions")).size() ; i++) {
-	        	html =  ((JSONObject)((JSONArray) res.get("questions")).get(i)).getAsString("html");
-	        	doc = Jsoup.parse(html);
-	        //	if(((JSONObject)((JSONArray) res.get("questions")).get(i)).getAsString("type") == "truefalse") {
-	        	// differentiate between true false and others, bcs for tf right answers are written  : the right answer is '' , whereas for other the ight answer is : 
-	        		questions += doc.getElementsByClass("qtext").text() + "\n";
-	        		assessment[i][0] = doc.getElementsByClass("qtext").text() +"\n";
-	        		assessment[i][2] = ((JSONObject)((JSONArray) res.get("questions")).get(i)).getAsString("type");
-	        		System.out.println(doc.getElementsByClass("qtext").text());
-	       	//}		// to differentiate between questions with one answer and questions with multiple correct answers
-	        		if(doc.getElementsByClass("rightanswer").text().contains("answers")) {
-	        			assessment[i][0] += "Select one or more:\n";
-	        			answers += doc.getElementsByClass("rightanswer").text().split("The correct answers are")[1] +"\n";
-	        			assessment[i][1] = doc.getElementsByClass("rightanswer").text().split("The correct answers are")[1];
-	        		} else {
-	        			assessment[i][0] += "Select one:\n";
-	        			answers += doc.getElementsByClass("rightanswer").text().split("The correct answer is")[1] +"\n";
-	        			assessment[i][1] = doc.getElementsByClass("rightanswer").text().split("The correct answer is")[1];
-	        		}
-	        		System.out.println(assessment[i][2]);
-	        		if(assessment[i][2].equals("multichoice") || assessment[i][2].equals("truefalse")) {
-	        			System.out.println("K");
-	        			// check if answers or answer here ? 
-	        			Elements multiChoiceAnswers = doc.getElementsByClass("ml-1");
-	        			for(Element item : multiChoiceAnswers) {
-	        				assessment[i][0] += item.text() + "\n";
-	        				System.out.println(item.text() + "\n");
+			JSONArray resi = (JSONArray) p.parse(result.getResponse());
+	        JSONObject res= new JSONObject();
+	        for(int i = 0; i < resi.size() ;i++) {
+	        	for(int j = 0; j < ((JSONArray)((JSONObject) resi.get(i)).get("modules")).size();j++) {
+	        		if(((JSONObject)((JSONArray)((JSONObject) resi.get(i)).get("modules")).get(j)).getAsString("modname").equals("quiz")){
+	        			if(((JSONObject)((JSONArray)((JSONObject) resi.get(i)).get("modules")).get(j)).getAsString("name").equals(topicName)) {
+	        				quizid = ((JSONObject)((JSONArray)((JSONObject) resi.get(i)).get("modules")).get(j)).getAsString("instance");
+	        				result = client.sendRequest("GET", "/webservice/rest/server.php?wstoken=" + wstoken + "&wsfunction=mod_quiz_start_attempt&quizid=" + quizid + "&moodlewsrestformat=json" , "",
+	        						"", MediaType.APPLICATION_JSON, headers);
+	        		         res = (JSONObject) p.parse(result.getResponse());
+	        		        attemptId = ((JSONObject) res.get("attempt")).getAsString("id");
+	        		        result = client.sendRequest("GET", "/webservice/rest/server.php?wstoken=" + wstoken + "&wsfunction=mod_quiz_process_attempt&attemptid=" + attemptId + "&finishattempt=1&moodlewsrestformat=json" , "",
+	        						"", MediaType.APPLICATION_JSON, headers);
+	        		        System.out.println(result.getResponse());
+	        		        result = client.sendRequest("GET", "/webservice/rest/server.php?wstoken=" + wstoken + "&wsfunction=mod_quiz_get_attempt_review&attemptid=" + attemptId + "&page=-1&moodlewsrestformat=json" , "",
+	        						"", MediaType.APPLICATION_JSON, headers);
+	        		        res = (JSONObject) p.parse(result.getResponse());
+	        		        String html = "";
+	        		        Document doc = Jsoup.parse("<html></html>");
+	        		        String questions = "";
+	        		        String answers = "";
+	        		        String[][] assessment = new String[((JSONArray) res.get("questions")).size()][4];
+	        		        for(int k = 0 ; k < ((JSONArray) res.get("questions")).size() ; k++) {
+	        		        	html =  ((JSONObject)((JSONArray) res.get("questions")).get(k)).getAsString("html");
+	        		        	doc = Jsoup.parse(html);
+	        		        	assessment[k][3] = "";
+	        		        //	if(((JSONObject)((JSONArray) res.get("questions")).get(i)).getAsString("type") == "truefalse") {
+	        		        	// differentiate between true false and others, bcs for tf right answers are written  : the right answer is '' , whereas for other the ight answer is : 
+	        		        		questions += doc.getElementsByClass("qtext").text() + "\n";
+	        		        		assessment[k][0] = doc.getElementsByClass("qtext").text() +"\n";
+	        		        		assessment[k][2] = ((JSONObject)((JSONArray) res.get("questions")).get(k)).getAsString("type");
+	        		        		System.out.println(doc.getElementsByClass("qtext").text());
+	        		       	//}		// to differentiate between questions with one answer and questions with multiple correct answers
+	        		        		if(doc.getElementsByClass("rightanswer").text().contains("answers")) {
+	        		        			
+	        		        			assessment[k][3] += "Select one or more:\n";
+	        		        			answers += doc.getElementsByClass("rightanswer").text().split("The correct answers are")[1] +"\n";
+	        		        			assessment[k][1] = doc.getElementsByClass("rightanswer").text().split("The correct answers are")[1];
+	        		        		} else {
+	        		        			if(assessment[k][2].equals("multichoice")) {
+	        		        				assessment[k][3] += "Select one:\n";
+	        		        			}
+	        		        			answers += doc.getElementsByClass("rightanswer").text().split("The correct answer is")[1] +"\n";
+	        		        			assessment[k][1] = doc.getElementsByClass("rightanswer").text().split("The correct answer is")[1];
+	        		        		}
+	        		        		System.out.println(assessment[k][2]);
+	        		        		if(assessment[k][2].equals("multichoice") || assessment[k][2].equals("truefalse")) {
+	        		        			System.out.println("K");
+	        		        			// check if answers or answer here ? 
+	        		        			Elements multiChoiceAnswers = doc.getElementsByClass("ml-1");
+	        		        			for(Element item : multiChoiceAnswers) {
+	        		        				assessment[k][3] +=" • "+ item.text() + " \n";
+	        		        				System.out.println(item.text() + "\n");
+	        		        			}
+	        		        		}
+	        		        		
+	        		        }
+	        		        this.currQuestion.put(triggeredBody.getAsString("channel"), 0);
+	        		        this.currAssessment.put(triggeredBody.getAsString("channel"), assessment);
+	        		        this.currCorrectQuestions.put(channel, ""); 
+	        		        JSONObject response = new JSONObject();
+	        		        response.put("text", "We will now start the moodle quiz :) \n " + assessment[0][0] + assessment[0][3]);
+	        		        response.put("closeContext" , "false");
+	        		        this.score.put(channel, 0);
+	        		        this.quitIntent = triggeredBody.getAsString("QuitIntent");
+	        		        assessmentStarted.put(channel,"true");
+	        		        return Response.ok().entity(response).build();
 	        			}
-	        			
-	        			
 	        		}
-	        		
+	        	}
 	        }
-	        this.currQuestion.put(triggeredBody.getAsString("channel"), 0);
-	        this.currAssessment.put(triggeredBody.getAsString("channel"), assessment);
-	        this.currCorrectQuestions.put(channel, ""); 
-	        JSONObject response = new JSONObject();
-	        response.put("text", "We will now start the moodle quiz :) \n " + assessment[0][0]);
-	        response.put("closeContext" , "false");
-	        this.score.put(channel, 0);
-	        assessmentStarted.put(channel,"true");
-	        return Response.ok().entity(response).build();
+	        res.put("text", "Quiz on topic " + topicName + "does not exist.");
+	        res.put("closeContext" , "true");
+	        return Response.ok().entity(res).build();
 		} else {
 			return Response.ok().entity(continueAssessment(channel, triggeredBody.getAsString("intent"), triggeredBody, "moodleAssessment")).build();
-			
-			
 		}  
-	}   
+	}
+    
+    
+    @GET
+	@Path("/a")
+	@Consumes(MediaType.TEXT_PLAIN)
+	@Produces(MediaType.APPLICATION_JSON)
+	@ApiOperation(
+			value = "REPLACE THIS WITH AN APPROPRIATE FUNCTION NAME",
+			notes = "REPLACE THIS WITH YOUR NOTES TO THE FUNCTION")
+	@ApiResponses(
+			value = { @ApiResponse(
+					code = HttpURLConnection.HTTP_OK,
+					message = "REPLACE THIS WITH YOUR OK MESSAGE") })
+	public Response a() {
+    	JSONObject b = new JSONObject();
+    	
+    	JSONObject a  = new JSONObject();
+    	JSONObject c = new JSONObject();
+    	c.put("topic","Ass2");
+    	a.put("topic", "Ass1");
+    	b.put("content",a);
+    	
+    	if(b.containsKey("content")) {
+    		JSONArray content = new JSONArray();
+    		content.add(b.get("content"));
+    		content.add(c);
+    		b.put("content", c);
+    		return Response.ok().entity(b).build();
+    	}
+		return null;
+		
+
+	}
     
     
 
