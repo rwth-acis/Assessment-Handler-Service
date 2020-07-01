@@ -22,7 +22,7 @@ cp $SERVICE_PROPERTY_FILE.sample $SERVICE_PROPERTY_FILE
 
 
 # set defaults for optional service parameters
-[[ -z "${SERVICE_PASSPHRASE}" ]] && export SERVICE_PASSPHRASE='sbf'
+[[ -z "${SERVICE_PASSPHRASE}" ]] && export SERVICE_PASSPHRASE='ahs'
 
 # wait for any bootstrap host to be available
 if [[ ! -z "${BOOTSTRAP}" ]]; then

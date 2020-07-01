@@ -348,7 +348,9 @@ public class AssessmentHandlerService extends RESTService {
 		        }
 		        this.incrementCounter(channel);
 		        if(this.getCurrentQuestionNumber(channel) == getAssessmentSize(channel)){
-		            answer += "Assessment is over \n" + "You got " + this.getMarks(channel) + "/" + this.getAssessmentSize(channel) + "Questions right! \n You got following Questions wrong: \n " + this.getWrongQuestions(channel);
+		        	if(this.getMarks(channel).equals(this.getAssessmentSize(channel))) {
+		        		answer += "Assessment is over \n" + "You got " + this.getMarks(channel) + "/" + this.getAssessmentSize(channel) + "Questions right! \n You got no Questions wrong! \n " + this.getWrongQuestions(channel);
+		        	} else answer += "Assessment is over \n" + "You got " + this.getMarks(channel) + "/" + this.getAssessmentSize(channel) + "Questions right! \n You got following Questions wrong: \n " + this.getWrongQuestions(channel);
 		            this.assessmentStarted.put(channel, null);
 		            response.put("closeContext", "true");
 		        } else {
@@ -365,17 +367,36 @@ public class AssessmentHandlerService extends RESTService {
 	        	String msg = triggeredBody.getAsString("msg");
 	        	// differ between true false / multiple answers, one answer 
 	        	// for multiple choice split with "," to have all the answers
-	        //	if(((JSONArray) this.currentAssessment.get("Answers")).get(this.getCurrentQuestionNumber(channel)).toLowerCase().contains(msg.toLowerCase())){
-		        if(((JSONArray) this.currentAssessment.get(channel).get("Answers")).get(this.getCurrentQuestionNumber(channel)).toString().toLowerCase().contains(msg.toLowerCase())){
-		            answer += "Correct Answer! \n";
-		            this.incrementMark(channel, 1);
-		        } else {
-		        	answer += "Wrong Answer:/ \n";
-		        	this.addWrongQuestion(channel);
-		        }
+	        	if(this.getQuestionType(channel).equals("numerical") || this.getQuestionType(channel).equals("shortanswer") ) {
+	        		 if(((JSONArray) this.currentAssessment.get(channel).get("Answers")).get(this.getCurrentQuestionNumber(channel)).toString().toLowerCase().equals(msg.toLowerCase())) {
+	        			answer += "Correct Answer! \n";
+	 		            this.incrementMark(channel, 1);
+	        		 } else {
+	        			 answer += "Wrong Answer:/ \n";
+	 		        	this.addWrongQuestion(channel);
+	        		 }
+	        	} else if(this.getQuestionType(channel).equals("truefalse")) {
+	        		 if(((JSONArray) this.currentAssessment.get(channel).get("Answers")).get(this.getCurrentQuestionNumber(channel)).toString().toLowerCase().contains(msg.toLowerCase())) {
+	        			answer += "Correct Answer! \n";
+	 		            this.incrementMark(channel, 1);
+	        		 } else {
+	        			answer += "Wrong Answer:/ \n";
+	 		        	this.addWrongQuestion(channel);
+	        		 }
+	        	} else if(this.getQuestionType(channel).equals("multichoice")) {
+	        		 if(((JSONArray) this.currentAssessment.get(channel).get("Answers")).get(this.getCurrentQuestionNumber(channel)).toString().toLowerCase().contains(msg.toLowerCase())) {
+	        			answer += "Correct Answer! \n";
+	 		            this.incrementMark(channel, 1);
+	        		 } else {
+	        			answer += "Wrong Answer:/ \n";
+	 		        	this.addWrongQuestion(channel);
+	        		 }
+	        	}
 		        this.incrementCounter(channel);
 		        if(this.getCurrentQuestionNumber(channel) == getAssessmentSize(channel)){
-		            answer += "Assessment is over \n" + "You got " + this.getMarks(channel) + "/" + this.getAssessmentSize(channel) + "Questions right! \n You got following Questions wrong: \n " + this.getWrongQuestions(channel);
+		        	if(this.getMarks(channel).equals(String.valueOf(this.getAssessmentSize(channel)))) {
+		        		answer += "Assessment is over \n" + "You got " + this.getMarks(channel) + "/" + this.getAssessmentSize(channel) + "Questions right! \n You got no Questions wrong! \n " + this.getWrongQuestions(channel);
+		        	} else answer += "Assessment is over \n" + "You got " + this.getMarks(channel) + "/" + this.getAssessmentSize(channel) + "Questions right! \n You got following Questions wrong: \n " + this.getWrongQuestions(channel);
 		            this.assessmentStarted.put(channel, null);
 		            response.put("closeContext", "true");
 		        } else {
@@ -405,7 +426,7 @@ public class AssessmentHandlerService extends RESTService {
     }    
     
     private void incrementMark(String channel, int value) {
-    	this.currentAssessment.get(channel).put("currentMark", Integer.parseInt(this.getMarks(channel) + value));
+    	this.currentAssessment.get(channel).put("currentMark", Integer.parseInt(this.getMarks(channel)) + value);
     } 
     
     private void addWrongQuestion(String channel) {
@@ -414,6 +435,10 @@ public class AssessmentHandlerService extends RESTService {
     
     private void incrementCounter(String channel) {
     	this.currentAssessment.get(channel).put("currentQuestion", this.getCurrentQuestionNumber(channel) + 1 );
+    }
+    
+    private String getQuestionType(String channel) {
+    	return ((JSONArray)this.currentAssessment.get(channel).get("QuestionType")).get(this.getCurrentQuestionNumber(channel)).toString();
     }
     
     @POST
@@ -435,7 +460,8 @@ public class AssessmentHandlerService extends RESTService {
 		String channel = triggeredBody.getAsString("channel");
 		String wstoken = triggeredBody.getAsString("wstoken");
 
-		if(triggeredBody.get("courseId") instanceof JSONObject) {
+		if(!(triggeredBody.get("courseId") instanceof JSONArray)) {
+			System.out.println("course id is :");
 			JSONArray courseId = new JSONArray();
 			courseId.add(triggeredBody.get("courseId"));
 			triggeredBody.put("courseId", courseId);
@@ -482,11 +508,12 @@ public class AssessmentHandlerService extends RESTService {
 		        		        Document doc = Jsoup.parse("<html></html>");
 		        		        String questions = "";
 		        		        String answers = "";
-		        		        String[][] assessment = new String[((JSONArray) res.get("questions")).size()][4];
+		        		        String[][] assessment = new String[((JSONArray) res.get("questions")).size()][5];
 		        		        for(int k = 0 ; k < ((JSONArray) res.get("questions")).size() ; k++) {
 		        		        	html =  ((JSONObject)((JSONArray) res.get("questions")).get(k)).getAsString("html");
 		        		        	doc = Jsoup.parse(html);
 		        		        	assessment[k][3] = "";
+		        		        	assessment[k][4] = "";
 		        		        //	if(((JSONObject)((JSONArray) res.get("questions")).get(i)).getAsString("type") == "truefalse") {
 		        		        	// differentiate between true false and others, bcs for tf right answers are written  : the right answer is '' , whereas for other the ight answer is : 
 		        		        		questions += doc.getElementsByClass("qtext").text() + "\n";
@@ -500,11 +527,14 @@ public class AssessmentHandlerService extends RESTService {
 		        		        			answers += doc.getElementsByClass("rightanswer").text().split("The correct answers are")[1] +"\n";
 		        		        			assessment[k][1] = doc.getElementsByClass("rightanswer").text().split("The correct answers are")[1];
 		        		        		} else {
-		        		        			if(assessment[k][2].equals("multichoice")) {
+		        		        			if(assessment[k][2].equals("multichoice") || assessment[k][2].equals("truefalse")) {
 		        		        				assessment[k][3] += "Select one:\n";
 		        		        			}
 		        		        			answers += doc.getElementsByClass("rightanswer").text().split("The correct answer is")[1] +"\n";
-		        		        			assessment[k][1] = doc.getElementsByClass("rightanswer").text().split("The correct answer is")[1];
+		        		        			if(assessment[k][2].equals("truefalse")) {
+		        		        				assessment[k][1] = doc.getElementsByClass("rightanswer").text().split("The correct answer is")[1];
+		        		        			} else assessment[k][1] = doc.getElementsByClass("rightanswer").text().split("The correct answer is: ")[1];
+		        		        			
 		        		        		}
 		        		        		System.out.println(assessment[k][2]);
 		        		        		if(assessment[k][2].equals("multichoice") || assessment[k][2].equals("truefalse")) {
@@ -514,6 +544,11 @@ public class AssessmentHandlerService extends RESTService {
 		        		        			for(Element item : multiChoiceAnswers) {
 		        		        				assessment[k][3] +=" • "+ item.text() + " \n";
 		        		        				System.out.println(item.text() + "\n");
+		        		        				if(assessment[k][2].equals("multichoice") ) {
+			        		        				if(assessment[k][1].contains(item.text().split("\\.")[1])) {
+			        		        					assessment[k][4] += item.text().split("\\.")[0] + " ; ";
+			        		        				}
+		        		        				}
 		        		        			}
 		        		        		}
 		        		        		
@@ -522,12 +557,18 @@ public class AssessmentHandlerService extends RESTService {
 		        		        JSONArray Answers = new JSONArray();
 		        		        JSONArray Possibilities = new JSONArray();
 		        		        JSONArray QuestionType = new JSONArray();
-		        		        
+		        		        for(int k = 0 ; k < assessment.length ; k++) {
+		        		        	
+		        		        }
 		        		        for(int k = 0 ; k < assessment.length ; k++) {
 		        		        	Questions.add(assessment[k][0]);
-		        		        	Answers.add(assessment[k][1]);
+		        		        	if(assessment[k][2].equals("multichoice")) {
+		        		        		Answers.add(assessment[k][4]);
+		        		        	} else Answers.add(assessment[k][1]);
+		        		        	
 		        		        	Possibilities.add(assessment[k][3]);
 		        		        	QuestionType.add(assessment[k][2]);
+		        		        	System.out.println(Answers.get(k).toString());
 		        		        }
 		        		        JSONObject currAssessmentContent = new JSONObject();
 		        		        currAssessmentContent.put("Questions", Questions);
