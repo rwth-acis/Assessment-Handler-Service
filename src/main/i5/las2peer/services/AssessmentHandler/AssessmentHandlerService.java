@@ -360,7 +360,7 @@ public class AssessmentHandlerService extends RESTService {
 	        
         } else if(assessmentType == "moodleAssessment") {
 	        if(intent.equals(quitIntent)) {
-	        	answer += "Assessment is over \n" + "You got " + this.getMarks(channel) + "/" + this.getAssessmentSize(channel) + "Questions right! \n You got following Questions wrong: \n " + this.getWrongQuestions(channel);
+	        	answer += "Assessment is over \n" + "Your final mark is *" + this.getMarks(channel) + "/" + this.getMaxMarks(channel) + "* \n You got following Questions wrong: \n " + this.getWrongQuestions(channel);
 	            this.assessmentStarted.put(channel, null);
 	            response.put("closeContext", "true");
 	        } else { 
@@ -370,7 +370,7 @@ public class AssessmentHandlerService extends RESTService {
 	        	if(this.getQuestionType(channel).equals("numerical") || this.getQuestionType(channel).equals("shortanswer") ) {
 	        		 if(((JSONArray) this.currentAssessment.get(channel).get("Answers")).get(this.getCurrentQuestionNumber(channel)).toString().toLowerCase().equals(msg.toLowerCase())) {
 	        			answer += "Correct Answer! \n";
-	 		            this.incrementMark(channel, 1);
+	        			this.incrementMark(channel, this.getMarkForCurrentQuestion(channel));
 	        		 } else {
 	        			 answer += "Wrong Answer:/ \n";
 	 		        	this.addWrongQuestion(channel);
@@ -378,16 +378,16 @@ public class AssessmentHandlerService extends RESTService {
 	        	} else if(this.getQuestionType(channel).equals("truefalse")) {
 	        		 if(((JSONArray) this.currentAssessment.get(channel).get("Answers")).get(this.getCurrentQuestionNumber(channel)).toString().toLowerCase().contains(msg.toLowerCase())) {
 	        			answer += "Correct Answer! \n";
-	 		            this.incrementMark(channel, 1);
+	 		            this.incrementMark(channel, this.getMarkForCurrentQuestion(channel));
 	        		 } else {
 	        			answer += "Wrong Answer:/ \n";
 	 		        	this.addWrongQuestion(channel);
 	        		 }
 	        	} else if(this.getQuestionType(channel).equals("multichoice")) {
-	        		if(((JSONArray) this.currentAssessment.get(channel).get("Answers")).get(this.getCurrentQuestionNumber(channel)).toString().split(";").length == 1) {
+	        		if(((JSONArray) this.currentAssessment.get(channel).get("Answers")).get(this.getCurrentQuestionNumber(channel)).toString().split(";").length == 2) {
 	        			if(((JSONArray) this.currentAssessment.get(channel).get("Answers")).get(this.getCurrentQuestionNumber(channel)).toString().toLowerCase().contains(msg.toLowerCase())) {
 		        			answer += "Correct Answer! \n";
-		 		            this.incrementMark(channel, 1);
+		        			this.incrementMark(channel, this.getMarkForCurrentQuestion(channel));
 		        		 } else {
 		        			answer += "Wrong Answer:/ \n";
 		 		        	this.addWrongQuestion(channel);
@@ -395,6 +395,7 @@ public class AssessmentHandlerService extends RESTService {
 	        		} else {
 	        			String[] multipleAnswers = ((JSONArray) this.currentAssessment.get(channel).get("Answers")).get(this.getCurrentQuestionNumber(channel)).toString().split(";");
 	        			String[] userAnswers = msg.split("\\s+");
+	        			double splitMark = this.getMarkForCurrentQuestion(channel)/multipleAnswers.length;
 	        			int numberOfCorrectAnswers = 0;
 	        			
 	        			for(int i = 0 ; i < multipleAnswers.length -1 ; i++) {
@@ -413,10 +414,10 @@ public class AssessmentHandlerService extends RESTService {
 	        			}
 	        			if(numberOfCorrectAnswers == (multipleAnswers.length-1) && (multipleAnswers.length-1) == userAnswers.length ) {
 	        				answer += "Correct Answer! \n";
-		 		            this.incrementMark(channel, numberOfCorrectAnswers);
+		 		            this.incrementMark(channel, this.getMarkForCurrentQuestion(channel));
 	        			} else if(numberOfCorrectAnswers < (multipleAnswers.length-1) && numberOfCorrectAnswers > 0 && (multipleAnswers.length-1) >= userAnswers.length) {
 	        				answer += "Your answer was partially correct, you got " + numberOfCorrectAnswers + " point(s)\n";
-		 		            this.incrementMark(channel, numberOfCorrectAnswers);
+		 		            this.incrementMark(channel, numberOfCorrectAnswers*splitMark);
 	        			} else if(numberOfCorrectAnswers < (multipleAnswers.length-1) && numberOfCorrectAnswers > 0 && (multipleAnswers.length-1) >= userAnswers.length) {
 	        				answer += "Your answers were all wrong \n";
 		 		            this.incrementMark(channel, numberOfCorrectAnswers);
@@ -439,8 +440,8 @@ public class AssessmentHandlerService extends RESTService {
 		        this.incrementCounter(channel);
 		        if(this.getCurrentQuestionNumber(channel) == getAssessmentSize(channel)){
 		        	if(this.getMarks(channel).equals(String.valueOf(this.getAssessmentSize(channel)))) {
-		        		answer += "Assessment is over \n" + "You got " + this.getMarks(channel) + "/" + this.getAssessmentSize(channel) + "Questions right! \n You got no Questions wrong! \n " + this.getWrongQuestions(channel);
-		        	} else answer += "Assessment is over \n" + "You got " + this.getMarks(channel) + "/" + this.getAssessmentSize(channel) + "Questions right! \n You got following Questions wrong: \n " + this.getWrongQuestions(channel);
+		        		answer += "Assessment is over \n" + "Your final mark is *" + this.getMarks(channel) + "/" + this.getMaxMarks(channel) + "* \n You got no Questions wrong! \n " + this.getWrongQuestions(channel);
+		        	} else answer += "Assessment is over \n" + "Your final mark is *" + this.getMarks(channel) + "/" + this.getMaxMarks(channel) + "*  \n You got following Questions wrong: \n " + this.getWrongQuestions(channel);
 		            this.assessmentStarted.put(channel, null);
 		            response.put("closeContext", "true");
 		        } else {
@@ -458,7 +459,15 @@ public class AssessmentHandlerService extends RESTService {
     	return this.currentAssessment.get(channel).getAsString("currentMark");
     }
     
-    private Integer getAssessmentSize(String channel) {
+    private double getMarkForCurrentQuestion(String channel) {
+    	return Double.parseDouble(((JSONArray) this.currentAssessment.get(channel).get("QuestionPoints")).get(this.getCurrentQuestionNumber(channel)).toString());
+    }
+    
+    private String getMaxMarks(String channel) {
+    	return this.currentAssessment.get(channel).getAsString("maxMark");
+    }
+    
+    private int getAssessmentSize(String channel) {
     	return ((JSONArray)this.currentAssessment.get(channel).get("Questions")).size();
     
     }
@@ -468,9 +477,10 @@ public class AssessmentHandlerService extends RESTService {
     private int getCurrentQuestionNumber(String channel) {
     	return Integer.parseInt(this.currentAssessment.get(channel).getAsString("currentQuestion"));
     }    
-    
-    private void incrementMark(String channel, int value) {
-    	this.currentAssessment.get(channel).put("currentMark", Integer.parseInt(this.getMarks(channel)) + value);
+        
+    private void incrementMark(String channel, double value) {
+    	this.currentAssessment.get(channel).put("currentMark", Double.parseDouble(this.getMarks(channel)) + value);
+    	System.out.println("doule is  :" + Double.parseDouble(this.getMarks(channel)) + value + "=" +  this.getMarks(channel));
     } 
     
     private void addWrongQuestion(String channel) {
@@ -552,12 +562,14 @@ public class AssessmentHandlerService extends RESTService {
 		        		        Document doc = Jsoup.parse("<html></html>");
 		        		        String questions = "";
 		        		        String answers = "";
-		        		        String[][] assessment = new String[((JSONArray) res.get("questions")).size()][5];
+		        		        String[][] assessment = new String[((JSONArray) res.get("questions")).size()][6];
 		        		        for(int k = 0 ; k < ((JSONArray) res.get("questions")).size() ; k++) {
 		        		        	html =  ((JSONObject)((JSONArray) res.get("questions")).get(k)).getAsString("html");
 		        		        	doc = Jsoup.parse(html);
 		        		        	assessment[k][3] = "";
 		        		        	assessment[k][4] = "";
+		        		        	assessment[k][5] = doc.getElementsByClass("grade").text().split("Marked out of ")[1];
+		        		        	System.out.println(assessment[k][5] + " is the grade");
 		        		        //	if(((JSONObject)((JSONArray) res.get("questions")).get(i)).getAsString("type") == "truefalse") {
 		        		        	// differentiate between true false and others, bcs for tf right answers are written  : the right answer is '' , whereas for other the ight answer is : 
 		        		        		questions += doc.getElementsByClass("qtext").text() + "\n";
@@ -610,20 +622,21 @@ public class AssessmentHandlerService extends RESTService {
 		        		        JSONArray Answers = new JSONArray();
 		        		        JSONArray Possibilities = new JSONArray();
 		        		        JSONArray QuestionType = new JSONArray();
-		        		        for(int k = 0 ; k < assessment.length ; k++) {
-		        		        	
-		        		        }
+		        		        JSONArray QuestionPoints = new JSONArray();
+		        		        int maxMark = 0;
 		        		        for(int k = 0 ; k < assessment.length ; k++) {
 		        		        	Questions.add(assessment[k][0]);
 		        		        	if(assessment[k][2].equals("multichoice")) {
 		        		        		Answers.add(assessment[k][4]);
 		        		        	} else Answers.add(assessment[k][1]);
-		        		        	
+		        		        	QuestionPoints.add(assessment[k][5]);
 		        		        	Possibilities.add(assessment[k][3]);
 		        		        	QuestionType.add(assessment[k][2]);
+		        		        	maxMark += Double.parseDouble(assessment[k][5]); 
 		        		        	System.out.println(Answers.get(k).toString());
 		        		        }
 		        		        JSONObject currAssessmentContent = new JSONObject();
+		        		        currAssessmentContent.put("QuestionPoints", QuestionPoints);
 		        		        currAssessmentContent.put("Questions", Questions);
 		        		        currAssessmentContent.put("Answers", Answers);
 		        		        currAssessmentContent.put("Possibilities", Possibilities);
@@ -631,6 +644,7 @@ public class AssessmentHandlerService extends RESTService {
 		        		        currAssessmentContent.put("currentQuestion" , 0);
 		        		        currAssessmentContent.put("currentWrongQuestions" ,"");
 		        		        currAssessmentContent.put("currentMark", 0);
+		        		        currAssessmentContent.put("maxMark", maxMark);
 		        		        currAssessmentContent.put("quitIntent", triggeredBody.getAsString("quitIntent"));
 		 /*       		        this.currQuestion.put(triggeredBody.getAsString("channel"), 0);
 		        		        this.currAssessment.put(triggeredBody.getAsString("channel"), assessment);
