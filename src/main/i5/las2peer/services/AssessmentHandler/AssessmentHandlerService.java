@@ -118,7 +118,7 @@ public class AssessmentHandlerService extends RESTService {
 			String channel = bodyJson.getAsString("channel");
 			if(this.assessmentStarted.get(channel) == null){
 				// function needs assessmentContent parameter
-				if(bodyJson.get("assessmentContent") instanceof JSONObject) {
+				if(!(bodyJson.get("assessmentContent") instanceof JSONArray)) {
 					JSONArray assessmentContent = new JSONArray();
 					assessmentContent.add(bodyJson.get("assessmentContent"));
 					bodyJson.put("assessmentContent", assessmentContent);
@@ -384,13 +384,57 @@ public class AssessmentHandlerService extends RESTService {
 	 		        	this.addWrongQuestion(channel);
 	        		 }
 	        	} else if(this.getQuestionType(channel).equals("multichoice")) {
-	        		 if(((JSONArray) this.currentAssessment.get(channel).get("Answers")).get(this.getCurrentQuestionNumber(channel)).toString().toLowerCase().contains(msg.toLowerCase())) {
-	        			answer += "Correct Answer! \n";
-	 		            this.incrementMark(channel, 1);
-	        		 } else {
-	        			answer += "Wrong Answer:/ \n";
-	 		        	this.addWrongQuestion(channel);
-	        		 }
+	        		if(((JSONArray) this.currentAssessment.get(channel).get("Answers")).get(this.getCurrentQuestionNumber(channel)).toString().split(";").length == 1) {
+	        			if(((JSONArray) this.currentAssessment.get(channel).get("Answers")).get(this.getCurrentQuestionNumber(channel)).toString().toLowerCase().contains(msg.toLowerCase())) {
+		        			answer += "Correct Answer! \n";
+		 		            this.incrementMark(channel, 1);
+		        		 } else {
+		        			answer += "Wrong Answer:/ \n";
+		 		        	this.addWrongQuestion(channel);
+		        		 }
+	        		} else {
+	        			String[] multipleAnswers = ((JSONArray) this.currentAssessment.get(channel).get("Answers")).get(this.getCurrentQuestionNumber(channel)).toString().split(";");
+	        			String[] userAnswers = msg.split("\\s+");
+	        			int numberOfCorrectAnswers = 0;
+	        			
+	        			for(int i = 0 ; i < multipleAnswers.length -1 ; i++) {
+	        				System.out.println(multipleAnswers[i]);
+	        				
+	        				for(int j = 0 ; j < userAnswers.length; j++ ){
+	        					System.out.println(userAnswers[j]);	
+	        					if(userAnswers[j].length() > 1 ) {
+	        						System.out.println("answer was larger than 1");
+	        						continue;
+	        					} else if(multipleAnswers[i].toLowerCase().contains(userAnswers[j].toLowerCase())) {
+	        						numberOfCorrectAnswers++;
+	        						break;
+	        					}
+	        				}
+	        			}
+	        			if(numberOfCorrectAnswers == (multipleAnswers.length-1) && (multipleAnswers.length-1) == userAnswers.length ) {
+	        				answer += "Correct Answer! \n";
+		 		            this.incrementMark(channel, numberOfCorrectAnswers);
+	        			} else if(numberOfCorrectAnswers < (multipleAnswers.length-1) && numberOfCorrectAnswers > 0 && (multipleAnswers.length-1) >= userAnswers.length) {
+	        				answer += "Your answer was partially correct, you got " + numberOfCorrectAnswers + " point(s)\n";
+		 		            this.incrementMark(channel, numberOfCorrectAnswers);
+	        			} else if(numberOfCorrectAnswers < (multipleAnswers.length-1) && numberOfCorrectAnswers > 0 && (multipleAnswers.length-1) >= userAnswers.length) {
+	        				answer += "Your answers were all wrong \n";
+		 		            this.incrementMark(channel, numberOfCorrectAnswers);
+	        			} else if(userAnswers.length > (multipleAnswers.length-1)) {
+	        				if(numberOfCorrectAnswers > 0 ) {
+	        					numberOfCorrectAnswers = numberOfCorrectAnswers - userAnswers.length + multipleAnswers.length -1;
+	        					answer += "Your answer was partially correct, you got " + numberOfCorrectAnswers + " point(s)\n";
+			 		            this.incrementMark(channel, numberOfCorrectAnswers);
+	        				} else {
+	        				answer += "Your answers were all wrong \n";
+		 		            this.incrementMark(channel, numberOfCorrectAnswers);
+	        				}
+	        			} else if(numberOfCorrectAnswers == 0) {
+	        				answer += "Your answers were all wrong \n";
+		 		            this.incrementMark(channel, numberOfCorrectAnswers);
+	        			}	
+	        		}
+	        		 
 	        	}
 		        this.incrementCounter(channel);
 		        if(this.getCurrentQuestionNumber(channel) == getAssessmentSize(channel)){
@@ -517,7 +561,7 @@ public class AssessmentHandlerService extends RESTService {
 		        		        //	if(((JSONObject)((JSONArray) res.get("questions")).get(i)).getAsString("type") == "truefalse") {
 		        		        	// differentiate between true false and others, bcs for tf right answers are written  : the right answer is '' , whereas for other the ight answer is : 
 		        		        		questions += doc.getElementsByClass("qtext").text() + "\n";
-		        		        		assessment[k][0] = doc.getElementsByClass("qtext").text() +"\n";
+		        		        		assessment[k][0] = "*" + doc.getElementsByClass("qtext").text() +"*\n";
 		        		        		assessment[k][2] = ((JSONObject)((JSONArray) res.get("questions")).get(k)).getAsString("type");
 		        		        		System.out.println(doc.getElementsByClass("qtext").text());
 		        		       	//}		// to differentiate between questions with one answer and questions with multiple correct answers
@@ -545,9 +589,18 @@ public class AssessmentHandlerService extends RESTService {
 		        		        				assessment[k][3] +=" • "+ item.text() + " \n";
 		        		        				System.out.println(item.text() + "\n");
 		        		        				if(assessment[k][2].equals("multichoice") ) {
-			        		        				if(assessment[k][1].contains(item.text().split("\\.")[1])) {
-			        		        					assessment[k][4] += item.text().split("\\.")[0] + " ; ";
-			        		        				}
+		        		        					System.out.println(assessment[k][1] + "is at " + item.text().split("\\.")[0] );
+		        		        					if(doc.getElementsByClass("rightanswer").text().contains("answers")) {
+		        		        						if(assessment[k][1].contains(item.text().split("\\.")[1])) {
+				        		        					System.out.println("I am at my rightful place" + item.text().split("\\.")[1]);
+				        		        					assessment[k][4] += item.text().split("\\.")[0] + " ; ";
+				        		        				}
+		        		        					} else {
+		        		        						if(item.text().split("\\.")[1].contains(assessment[k][1])) {
+				        		        					System.out.println("I am at my rightful place" + item.text().split("\\.")[1]);
+				        		        					assessment[k][4] += item.text().split("\\.")[0] + " ; ";
+				        		        				}
+		        		        					}
 		        		        				}
 		        		        			}
 		        		        		}
