@@ -239,7 +239,7 @@ public class AssessmentHandlerService extends RESTService {
 		            answer += "Correct Answer! \n";
 		            this.score.put(channel, this.score.get(channel) + 1 );
 		        } else {
-		        	answer += "Wrong Answer:/ \n";
+		        	answer += "wrong answer :/ \n";
 		        	this.currCorrectQuestions.put(channel, this.currCorrectQuestions.get(channel) + this.currAssessment.get(channel)[this.currQuestion.get(channel)][1] + "\n");
 		        }
 		        this.currQuestion.put(channel,this.currQuestion.get(channel)+1);
@@ -266,7 +266,7 @@ public class AssessmentHandlerService extends RESTService {
 		            answer += "Correct Answer! \n";
 		            this.score.put(channel, this.score.get(channel) + 1 );
 		        } else {
-		        	answer += "Wrong Answer:/ \n";
+		        	answer += "wrong answer :/ \n";
 		        	this.currCorrectQuestions.put(channel, this.currCorrectQuestions.get(channel) + this.currAssessment.get(channel)[this.currQuestion.get(channel)][0]  + "\n");
 		        }
 		        this.currQuestion.put(channel,this.currQuestion.get(channel)+1);
@@ -301,7 +301,7 @@ public class AssessmentHandlerService extends RESTService {
 		            answer += "Correct Answer! \n";
 		            this.incrementMark(channel, 1);
 		        } else {
-		        	answer += "Wrong Answer:/ \n";
+		        	answer += "wrong answer :/ \n";
 		        	this.addWrongQuestion(channel);
 		        }
 		        this.incrementCounter(channel);
@@ -330,7 +330,7 @@ public class AssessmentHandlerService extends RESTService {
 	        			answer += "Correct Answer! \n";
 	        			this.incrementMark(channel, this.getMarkForCurrentQuestion(channel));
 	        		 } else {
-	        			 answer += "Wrong Answer:/ \n";
+	        			 answer += "wrong answer :/ \n";
 	 		        	this.addWrongQuestion(channel);
 	        		 }
 	        	} else if(this.getQuestionType(channel).equals("truefalse")) {
@@ -338,7 +338,7 @@ public class AssessmentHandlerService extends RESTService {
 	        			answer += "Correct Answer! \n";
 	 		            this.incrementMark(channel, this.getMarkForCurrentQuestion(channel));
 	        		 } else {
-	        			answer += "Wrong Answer:/ \n";
+	        			answer += "wrong answer :/ \n";
 	 		        	this.addWrongQuestion(channel);
 	        		 }
 	        	} else if(this.getQuestionType(channel).equals("multichoice")) {
@@ -347,7 +347,7 @@ public class AssessmentHandlerService extends RESTService {
 		        			answer += "Correct Answer! \n";
 		        			this.incrementMark(channel, this.getMarkForCurrentQuestion(channel));
 		        		 } else {
-		        			answer += "Wrong Answer:/ \n";
+		        			answer += "wrong answer :/ \n";
 		 		        	this.addWrongQuestion(channel);
 		        		 }
 	        		} else {
@@ -551,50 +551,53 @@ public class AssessmentHandlerService extends RESTService {
 		        		        	if(doc.getElementsByClass("generalfeedback") != null) {
 		        		        		assessment[k][6] = doc.getElementsByClass("generalfeedback").text();
 		        		        	} else assessment[k][6] = "";
-		        		        //	if(((JSONObject)((JSONArray) res.get("questions")).get(i)).getAsString("type") == "truefalse") {
-		        		        	// differentiate between true false and others, bcs for tf right answers are written  : the right answer is '' , whereas for other the ight answer is : 
-		        		        		questions += doc.getElementsByClass("qtext").text() + "\n";
-		        		        		assessment[k][0] = "*" + doc.getElementsByClass("qtext").text() +"*\n";
-		        		        		assessment[k][2] = ((JSONObject)((JSONArray) res.get("questions")).get(k)).getAsString("type");
-		        		        		System.out.println(doc.getElementsByClass("qtext").text());
-		        		       	//}		// to differentiate between questions with one answer and questions with multiple correct answers
-		        		        		if(doc.getElementsByClass("rightanswer").text().contains("answers")) {
-		        		        			
-		        		        			assessment[k][3] += "Select one or more:\n";
-		        		        			answers += doc.getElementsByClass("rightanswer").text().split("The correct answers are")[1] +"\n";
-		        		        			assessment[k][1] = doc.getElementsByClass("rightanswer").text().split("The correct answers are")[1];
-		        		        		} else {
-		        		        			if(assessment[k][2].equals("multichoice") || assessment[k][2].equals("truefalse")) {
-		        		        				assessment[k][3] += "Select one:\n";
-		        		        			}
-		        		        			answers += doc.getElementsByClass("rightanswer").text().split("The correct answer is")[1] +"\n";
-		        		        			if(assessment[k][2].equals("truefalse")) {
-		        		        				assessment[k][1] = doc.getElementsByClass("rightanswer").text().split("The correct answer is")[1];
-		        		        			} else assessment[k][1] = doc.getElementsByClass("rightanswer").text().split("The correct answer is: ")[1];
-		        		        			
-		        		        		}
-		        		        		if(assessment[k][2].equals("multichoice") || assessment[k][2].equals("truefalse")) {
-		        		        			// check if answers or answer here ? 
-		        		        			Elements multiChoiceAnswers = doc.getElementsByClass("ml-1");
-		        		        			for(Element item : multiChoiceAnswers) {
-		        		        				assessment[k][3] +=" • "+ item.text() + " \n";
-		        		        				System.out.println(item.text() + "\n");
-		        		        				if(assessment[k][2].equals("multichoice") ) {
-		        		        					System.out.println(assessment[k][1] + "is at " + item.text().split("\\.")[0] );
-		        		        					if(doc.getElementsByClass("rightanswer").text().contains("answers")) {
-		        		        						if(assessment[k][1].contains(item.text().split("\\.")[1])) {
-				        		        					System.out.println("I am at my rightful place" + item.text().split("\\.")[1]);
-				        		        					assessment[k][4] += item.text().split("\\.")[0] + " ; ";
-				        		        				}
-		        		        					} else {
-		        		        						if(item.text().split("\\.")[1].contains(assessment[k][1])) {
-				        		        					System.out.println("I am at my rightful place" + item.text().split("\\.")[1]);
-				        		        					assessment[k][4] += item.text().split("\\.")[0] + " ; ";
-				        		        				}
-		        		        					}
-		        		        				}
-		        		        			}
-		        		        		}
+	        		        		questions = "";
+	        		        		for(int l = 0 ; l < doc.getElementsByClass("qtext").get(0).getElementsByTag("p").size() ; l++) {
+	        		        			if(!doc.getElementsByClass("qtext").get(0).getElementsByTag("p").get(l).text().equals("")) {
+	        		        				questions +=  "*"+doc.getElementsByClass("qtext").get(0).getElementsByTag("p").get(l).text() + "*\n";
+	        		        			}
+	        		        			System.out.println(doc.getElementsByClass("qtext").get(0).getElementsByTag("p").get(l));
+	        		        		}
+	        		        		assessment[k][0] = questions ;
+	        		        		assessment[k][2] = ((JSONObject)((JSONArray) res.get("questions")).get(k)).getAsString("type");
+	        		        		System.out.println(doc.getElementsByClass("qtext").text());
+	        		        		// to differentiate between questions with one answer and questions with multiple correct answers
+	        		        		if(doc.getElementsByClass("rightanswer").text().contains("answers")) {
+	        		        			assessment[k][3] += "Select one or more:\n";
+	        		        			answers += doc.getElementsByClass("rightanswer").text().split("The correct answers are")[1] +"\n";
+	        		        			assessment[k][1] = doc.getElementsByClass("rightanswer").text().split("The correct answers are")[1];
+	        		        		} else {
+	        		        			if(assessment[k][2].equals("multichoice") || assessment[k][2].equals("truefalse")) {
+	        		        				assessment[k][3] += "Select one:\n";
+	        		        			}
+	        		        			answers += doc.getElementsByClass("rightanswer").text().split("The correct answer is")[1] +"\n";
+	        		        			if(assessment[k][2].equals("truefalse")) {
+	        		        				assessment[k][1] = doc.getElementsByClass("rightanswer").text().split("The correct answer is")[1];
+	        		        			} else assessment[k][1] = doc.getElementsByClass("rightanswer").text().split("The correct answer is: ")[1];
+	        		        			
+	        		        		}
+	        		        		if(assessment[k][2].equals("multichoice") || assessment[k][2].equals("truefalse")) {
+	        		        			// check if answers or answer here ? 
+	        		        			Elements multiChoiceAnswers = doc.getElementsByClass("ml-1");
+	        		        			for(Element item : multiChoiceAnswers) {
+	        		        				assessment[k][3] +=" • "+ item.text() + " \n";
+	        		        				System.out.println(item.text() + "\n");
+	        		        				if(assessment[k][2].equals("multichoice") ) {
+	        		        					System.out.println(assessment[k][1] + "is at " + item.text().split("\\.")[0] );
+	        		        					if(doc.getElementsByClass("rightanswer").text().contains("answers")) {
+	        		        						if(assessment[k][1].contains(item.text().split("\\.")[1])) {
+			        		        					System.out.println("I am at my rightful place" + item.text().split("\\.")[1]);
+			        		        					assessment[k][4] += item.text().split("\\.")[0] + " ; ";
+			        		        				}
+	        		        					} else {
+	        		        						if(item.text().split("\\.")[1].contains(assessment[k][1])) {
+			        		        					System.out.println("I am at my rightful place" + item.text().split("\\.")[1]);
+			        		        					assessment[k][4] += item.text().split("\\.")[0] + " ; ";
+			        		        				}
+	        		        					}
+	        		        				}
+	        		        			}
+	        		        		}
 		        		        		
 		        		        }
 		        		        JSONArray Questions = new JSONArray();
