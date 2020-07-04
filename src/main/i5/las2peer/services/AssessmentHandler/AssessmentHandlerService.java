@@ -556,6 +556,9 @@ public class AssessmentHandlerService extends RESTService {
 	        		        			if(!doc.getElementsByClass("qtext").get(0).getElementsByTag("p").get(l).text().equals("")) {
 	        		        				questions +=  "*"+doc.getElementsByClass("qtext").get(0).getElementsByTag("p").get(l).text() + "*\n";
 	        		        			}
+	        		        			if(doc.getElementsByClass("qtext").get(0).getElementsByTag("p").get(l).text().equals("") && doc.getElementsByClass("qtext").get(0).getElementsByTag("p").size() == 1) {
+	        		        				questions +=  "*"+doc.getElementsByClass("qtext").text() + "*\n";
+	        		        			}
 	        		        			System.out.println(doc.getElementsByClass("qtext").get(0).getElementsByTag("p").get(l));
 	        		        		}
 	        		        		assessment[k][0] = questions ;
@@ -563,7 +566,7 @@ public class AssessmentHandlerService extends RESTService {
 	        		        		System.out.println(doc.getElementsByClass("qtext").text());
 	        		        		// to differentiate between questions with one answer and questions with multiple correct answers
 	        		        		if(doc.getElementsByClass("rightanswer").text().contains("answers")) {
-	        		        			assessment[k][3] += "Select one or more:\n";
+	        		        			assessment[k][3] += "Select one or more: (Separate your answers with a whitespace, e.g : a b)\n";
 	        		        			answers += doc.getElementsByClass("rightanswer").text().split("The correct answers are")[1] +"\n";
 	        		        			assessment[k][1] = doc.getElementsByClass("rightanswer").text().split("The correct answers are")[1];
 	        		        		} else {
@@ -586,12 +589,10 @@ public class AssessmentHandlerService extends RESTService {
 	        		        					System.out.println(assessment[k][1] + "is at " + item.text().split("\\.")[0] );
 	        		        					if(doc.getElementsByClass("rightanswer").text().contains("answers")) {
 	        		        						if(assessment[k][1].contains(item.text().split("\\.")[1])) {
-			        		        					System.out.println("I am at my rightful place" + item.text().split("\\.")[1]);
 			        		        					assessment[k][4] += item.text().split("\\.")[0] + " ; ";
 			        		        				}
 	        		        					} else {
 	        		        						if(item.text().split("\\.")[1].contains(assessment[k][1])) {
-			        		        					System.out.println("I am at my rightful place" + item.text().split("\\.")[1]);
 			        		        					assessment[k][4] += item.text().split("\\.")[0] + " ; ";
 			        		        				}
 	        		        					}
