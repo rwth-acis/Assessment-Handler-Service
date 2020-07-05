@@ -552,14 +552,18 @@ public class AssessmentHandlerService extends RESTService {
 		        		        		assessment[k][6] = doc.getElementsByClass("generalfeedback").text();
 		        		        	} else assessment[k][6] = "";
 	        		        		questions = "";
-	        		        		for(int l = 0 ; l < doc.getElementsByClass("qtext").get(0).getElementsByTag("p").size() ; l++) {
-	        		        			if(!doc.getElementsByClass("qtext").get(0).getElementsByTag("p").get(l).text().equals("")) {
-	        		        				questions +=  "*"+doc.getElementsByClass("qtext").get(0).getElementsByTag("p").get(l).text() + "*\n";
-	        		        			}
-	        		        			if(doc.getElementsByClass("qtext").get(0).getElementsByTag("p").get(l).text().equals("") && doc.getElementsByClass("qtext").get(0).getElementsByTag("p").size() == 1) {
-	        		        				questions +=  "*"+doc.getElementsByClass("qtext").text() + "*\n";
-	        		        			}
-	        		        			System.out.println(doc.getElementsByClass("qtext").get(0).getElementsByTag("p").get(l));
+	        		        		if(doc.getElementsByClass("qtext").get(0).getElementsByTag("p").size() == 0) {
+	        		        			questions = "*"+doc.getElementsByClass("qtext").text() + "*\n";
+	        		        		} else {
+	        		        			for(int l = 0 ; l < doc.getElementsByClass("qtext").get(0).getElementsByTag("p").size() ; l++) {
+		        		        			if(!doc.getElementsByClass("qtext").get(0).getElementsByTag("p").get(l).text().equals("")) {
+		        		        				questions +=  "*"+doc.getElementsByClass("qtext").get(0).getElementsByTag("p").get(l).text() + "*\n";
+		        		        			}
+		        		        			if(doc.getElementsByClass("qtext").get(0).getElementsByTag("p").get(l).text().equals("") && doc.getElementsByClass("qtext").get(0).getElementsByTag("p").size() == 1) {
+		        		        				questions +=  "*"+doc.getElementsByClass("qtext").text() + "*\n";
+		        		        			}
+		        		        			System.out.println(doc.getElementsByClass("qtext").get(0).getElementsByTag("p").get(l));
+		        		        		}
 	        		        		}
 	        		        		assessment[k][0] = questions ;
 	        		        		assessment[k][2] = ((JSONObject)((JSONArray) res.get("questions")).get(k)).getAsString("type");
