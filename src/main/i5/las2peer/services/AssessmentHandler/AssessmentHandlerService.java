@@ -588,7 +588,9 @@ public class AssessmentHandlerService extends RESTService {
 	        		        			answers += doc.getElementsByClass("rightanswer").text().split("The correct answers are")[1] +"\n";
 	        		        			assessment[k][1] = doc.getElementsByClass("rightanswer").text().split("The correct answers are")[1];
 	        		        		} else {
-	        		        			if(assessment[k][2].equals("multichoice") || assessment[k][2].equals("truefalse")) {
+	        		        			if(assessment[k][2].equals("multichoice")) {
+	        		        				assessment[k][3] += "Select one:(choose by simply answering with the associated letter/number)\n";
+	        		        			} else if(assessment[k][2].equals("truefalse")) {
 	        		        				assessment[k][3] += "Select one:\n";
 	        		        			}
 	        		        			answers += doc.getElementsByClass("rightanswer").text().split("The correct answer is")[1] +"\n";
