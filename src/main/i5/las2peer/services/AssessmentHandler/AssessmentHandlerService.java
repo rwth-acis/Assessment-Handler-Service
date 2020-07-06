@@ -148,8 +148,13 @@ public class AssessmentHandlerService extends RESTService {
 							return Response.ok().entity(response).build(); 
 						}
 					}
+					JSONObject error = new JSONObject();
+					error.put("text", "Topic with name " + bodyJson.getAsString("topic")+ " not found");
+					error.put("closeContext", "true");
+					return Response.ok().entity(error).build();
 					
 				}
+				
 
 			} else {
 				System.out.println(bodyJson.getAsString("intent"));
@@ -159,8 +164,10 @@ public class AssessmentHandlerService extends RESTService {
 		} catch (ParseException e) {
 			e.printStackTrace();
 		}	
-
-		return Response.ok().entity("Something went wrong").build();
+		JSONObject error = new JSONObject();
+		error.put("text", "Something went wrong");
+		error.put("closeContext", "true");
+		return Response.ok().entity(error).build();
 
 	}	
 	
