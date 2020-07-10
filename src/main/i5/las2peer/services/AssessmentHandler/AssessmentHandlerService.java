@@ -404,7 +404,7 @@ public class AssessmentHandlerService extends RESTService {
 	        			System.out.println(multipleAnswers.length-1);
         				for(int j = 0 ; j < userAnswers.length; j++ ){
         					System.out.println(userAnswers[j]);	
-        					if(userAnswers[j].length() > 1 || this.getAnswerPossibilitiesForMCQ(channel).toLowerCase().contains(msg.toLowerCase())) {
+        					if(userAnswers[j].length() > 1 || !this.getAnswerPossibilitiesForMCQ(channel).toLowerCase().contains(msg.toLowerCase())) {
 	        					answer += "Please only enter the letters/numbers corresponding to the given answers!\n";
 		        				JSONObject userMistake = new JSONObject();
 		        				userMistake.put("text", answer);
