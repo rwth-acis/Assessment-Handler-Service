@@ -381,7 +381,7 @@ public class AssessmentHandlerService extends RESTService {
 	        				userMistake.put("closeContext", "false");
 	        				return userMistake;
 	        			} else {
-	        				if(this.getAnswerPossibilitiesForMCQ(channel).toLowerCase().contains(msg.toLowerCase())) {
+	        				if(!this.getAnswerPossibilitiesForMCQ(channel).toLowerCase().contains(msg.toLowerCase())) {
 	        					answer += "Please only enter the letter/number corresponding to the given answers!\n";
 		        				JSONObject userMistake = new JSONObject();
 		        				userMistake.put("text", answer);
