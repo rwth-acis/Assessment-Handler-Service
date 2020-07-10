@@ -411,6 +411,7 @@ public class AssessmentHandlerService extends RESTService {
 		        				userMistake.put("closeContext", "false");
 		        				return userMistake;
         					}
+        				}
 	        			for(int i = 0 ; i < multipleAnswers.length -1 ; i++) {
 	        				System.out.println(multipleAnswers[i]);
 	        				
