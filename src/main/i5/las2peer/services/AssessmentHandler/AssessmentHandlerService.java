@@ -260,7 +260,7 @@ public class AssessmentHandlerService extends RESTService {
 		            answer += "Correct Answer! \n";
 		            this.score.put(channel, this.score.get(channel) + 1 );
 		        } else {
-		        	answer += "wrong answer :/ \n";
+		        	answer += "Wrong answer :/ \n";
 		        	this.currCorrectQuestions.put(channel, this.currCorrectQuestions.get(channel) + this.currAssessment.get(channel)[this.currQuestion.get(channel)][1] + "\n");
 		        }
 		        this.currQuestion.put(channel,this.currQuestion.get(channel)+1);
@@ -287,7 +287,7 @@ public class AssessmentHandlerService extends RESTService {
 		            answer += "Correct Answer! \n";
 		            this.score.put(channel, this.score.get(channel) + 1 );
 		        } else {
-		        	answer += "wrong answer :/ \n";
+		        	answer += "Wrong answer :/ \n";
 		        	this.currCorrectQuestions.put(channel, this.currCorrectQuestions.get(channel) + this.currAssessment.get(channel)[this.currQuestion.get(channel)][0]  + "\n");
 		        }
 		        this.currQuestion.put(channel,this.currQuestion.get(channel)+1);
@@ -329,7 +329,7 @@ public class AssessmentHandlerService extends RESTService {
 		            answer += "Correct Answer! \n";
 		            this.incrementMark(channel, 1);
 		        } else {
-		        	answer += "wrong answer :/ \n";
+		        	answer += "Wrong answer :/ \n";
 		        	this.addWrongQuestion(channel);
 		        }
 		        this.incrementCounter(channel);
@@ -361,7 +361,7 @@ public class AssessmentHandlerService extends RESTService {
 	        			answer += "Correct Answer! \n";
 	        			this.incrementMark(channel, this.getMarkForCurrentQuestion(channel));
 	        		 } else {
-	        			 answer += "wrong answer :/ \n";
+	        			 answer += "Wrong answer :/ \n";
 	 		        	this.addWrongQuestion(channel);
 	        		 }
 	        	} else if(this.getQuestionType(channel).equals("truefalse")) {
@@ -369,24 +369,48 @@ public class AssessmentHandlerService extends RESTService {
 	        			answer += "Correct Answer! \n";
 	 		            this.incrementMark(channel, this.getMarkForCurrentQuestion(channel));
 	        		 } else {
-	        			answer += "wrong answer :/ \n";
+	        			answer += "Wrong answer :/ \n";
 	 		        	this.addWrongQuestion(channel);
 	        		 }
 	        	} else if(this.getQuestionType(channel).equals("multichoice")) {
 	        		if(((JSONArray) this.currentAssessment.get(channel).get("Answers")).get(this.getCurrentQuestionNumber(channel)).toString().split(";").length == 2) {
-	        			if(((JSONArray) this.currentAssessment.get(channel).get("Answers")).get(this.getCurrentQuestionNumber(channel)).toString().toLowerCase().contains(msg.toLowerCase())) {
-		        			answer += "Correct Answer! \n";
-		        			this.incrementMark(channel, this.getMarkForCurrentQuestion(channel));
-		        		 } else {
-		        			answer += "wrong answer :/ \n";
-		 		        	this.addWrongQuestion(channel);
-		        		 }
+	        			if(msg.length() > 1) {
+	        				answer += "Please only enter the letter/number corresponding to the given answers!\n";
+	        				JSONObject userMistake = new JSONObject();
+	        				userMistake.put("text", answer);
+	        				userMistake.put("closeContext", "false");
+	        				return userMistake;
+	        			} else {
+	        				if(this.getAnswerPossibilitiesForMCQ(channel).toLowerCase().contains(msg.toLowerCase())) {
+	        					answer += "Please only enter the letter/number corresponding to the given answers!\n";
+		        				JSONObject userMistake = new JSONObject();
+		        				userMistake.put("text", answer);
+		        				userMistake.put("closeContext", "false");
+		        				return userMistake;
+	        				}
+		        			if(((JSONArray) this.currentAssessment.get(channel).get("Answers")).get(this.getCurrentQuestionNumber(channel)).toString().toLowerCase().contains(msg.toLowerCase())) {
+			        			answer += "Correct Answer! \n";
+			        			this.incrementMark(channel, this.getMarkForCurrentQuestion(channel));
+			        		 } else {
+			        			answer += "Wrong answer :/ \n";
+			 		        	this.addWrongQuestion(channel);
+			        		 }
+	        			}
 	        		} else {
 	        			String[] multipleAnswers = ((JSONArray) this.currentAssessment.get(channel).get("Answers")).get(this.getCurrentQuestionNumber(channel)).toString().split(";");
 	        			String[] userAnswers = msg.split("\\s+");
 	        			double splitMark = this.getMarkForCurrentQuestion(channel)/(multipleAnswers.length-1);
 	        			int numberOfCorrectAnswers = 0;
 	        			System.out.println(multipleAnswers.length-1);
+        				for(int j = 0 ; j < userAnswers.length; j++ ){
+        					System.out.println(userAnswers[j]);	
+        					if(userAnswers[j].length() > 1 || this.getAnswerPossibilitiesForMCQ(channel).toLowerCase().contains(msg.toLowerCase())) {
+	        					answer += "Please only enter the letters/numbers corresponding to the given answers!\n";
+		        				JSONObject userMistake = new JSONObject();
+		        				userMistake.put("text", answer);
+		        				userMistake.put("closeContext", "false");
+		        				return userMistake;
+        					}
 	        			for(int i = 0 ; i < multipleAnswers.length -1 ; i++) {
 	        				System.out.println(multipleAnswers[i]);
 	        				
@@ -436,37 +460,8 @@ public class AssessmentHandlerService extends RESTService {
 	        				 if(points >= 0) {
 	        					 this.incrementMark(channel, numberOfCorrectAnswers*splitMark);
 	        				 }
-	        			}
-	        			
-	        			/*if(numberOfCorrectAnswers == (multipleAnswers.length-1) && (multipleAnswers.length-1) == userAnswers.length ) {
-	        				answer += "Correct Answer(s)! \n";
-		 		            this.incrementMark(channel, this.getMarkForCurrentQuestion(channel));
-	        			} else if(numberOfCorrectAnswers < (multipleAnswers.length-1) && numberOfCorrectAnswers > 0 && (multipleAnswers.length-1) >= userAnswers.length) {
-	        				answer += "Your answer was partially correct, you got " + numberOfCorrectAnswers + " correct answer(s)\n";
-	        				this.addWrongQuestion(channel);
-		 		            this.incrementMark(channel, numberOfCorrectAnswers*splitMark);
-	        			} else if(numberOfCorrectAnswers < (multipleAnswers.length-1) && numberOfCorrectAnswers > 0 && (multipleAnswers.length-1) >= userAnswers.length) {
-	        				answer += "Your answer(s) were all wrong \n";
-	        				this.addWrongQuestion(channel);
-	        				this.incrementMark(channel, numberOfCorrectAnswers);
-	        			} else if(userAnswers.length >= (multipleAnswers.length-1)) {
-	        				if(numberOfCorrectAnswers > 0 ) {
-	        					answer += "Your answer was partially correct, you got " + numberOfCorrectAnswers + " correct answer(s)";
-	        					numberOfCorrectAnswers = numberOfCorrectAnswers - userAnswers.length + multipleAnswers.length -1;
-	        					answer += " and " + numberOfCorrectAnswers + " wrong answer(s)\n";
-	        					this.addWrongQuestion(channel);
-			 		            this.incrementMark(channel, numberOfCorrectAnswers);
-	        				} else {
-	        					this.addWrongQuestion(channel);
-	        					answer += "Your answers were all wrong \n";
-	        				}
-	        			} else if(numberOfCorrectAnswers == 0) {
-	        				this.addWrongQuestion(channel);
-	        				answer += "Your answers were all wrong \n";
-	        			}*/	
-	        			
+	        			}	
 	        		}
-	        		 
 	        	}
 	        	if(!((JSONArray)this.currentAssessment.get(channel).get("Feedback")).get(this.getCurrentQuestionNumber(channel)).toString().equals("")) {
 	        		answer += ((JSONArray)this.currentAssessment.get(channel).get("Feedback")).get(this.getCurrentQuestionNumber(channel)).toString() + "\n";
@@ -544,6 +539,16 @@ public class AssessmentHandlerService extends RESTService {
     
     private String getHelpIntent(String channel){
     	return this.currentAssessment.get(channel).getAsString("helpIntent");
+    }
+    // returns the letters/numbers used to enumerate the possible answers for the MCQ
+    private String getAnswerPossibilitiesForMCQ(String channel) {
+    	 String answers = ((JSONArray) this.currentAssessment.get(channel).get("Possibilities")).get(this.getCurrentQuestionNumber(channel)).toString();
+    	 String[] splitLineBreak = answers.split("\\n");
+    	 String concat = "";
+    	 for(int i = 0 ; i < splitLineBreak.length ; i++) {
+    		 concat += splitLineBreak[i].split("\\.")[0];
+    	 }
+    	 return concat;
     }
     
     @POST
@@ -661,7 +666,7 @@ public class AssessmentHandlerService extends RESTService {
 	        		        			assessment[k][1] = doc.getElementsByClass("rightanswer").text().split("The correct answers are")[1];
 	        		        		} else {
 	        		        			if(assessment[k][2].equals("multichoice")) {
-	        		        				assessment[k][3] += "Select one:(choose by simply answering with the associated letter/number)\n";
+	        		        				assessment[k][3] += "Select one :(choose by simply answering with the associated letter/number)\n";
 	        		        			} else if(assessment[k][2].equals("truefalse")) {
 	        		        				assessment[k][3] += "Select one:\n";
 	        		        			}
