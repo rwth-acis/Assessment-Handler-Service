@@ -814,7 +814,7 @@ public class AssessmentHandlerService extends RESTService {
 					answer.put("closeContext", "false");
 					return Response.ok().entity(answer).build();
 			} else {
-				String topicNumber = triggeredBody.getAsString("msg").split("\\.")[0];
+				String chosenTopicNumber = triggeredBody.getAsString("msg").split("\\.")[0];
 				String similarNames = "";
 				MiniClient client = new MiniClient();
 				client.setConnectorEndpoint(triggeredBody.getAsString("LMSURL"));
@@ -834,7 +834,7 @@ public class AssessmentHandlerService extends RESTService {
 			        	for(int j = 0; j < ((JSONArray)((JSONObject) resi.get(i)).get("modules")).size();j++) {
 			        		if(((JSONObject)((JSONArray)((JSONObject) resi.get(i)).get("modules")).get(j)).getAsString("modname").equals("quiz")){
 			        			String topicName = ((JSONObject)((JSONArray)((JSONObject) resi.get(i)).get("modules")).get(j)).getAsString("name");
-			        			if(topicCount == Integer.parseInt(topicNumber) || topicName.toLowerCase().equals(triggeredBody.getAsString("msg").toLowerCase())) {
+			        			if(String.valueOf(topicCount).equals(chosenTopicNumber) || topicName.toLowerCase().equals(triggeredBody.getAsString("msg").toLowerCase())) {
 			        				this.topicsProposed.put(channel,null);
 			        				
 			        				quizid = ((JSONObject)((JSONArray)((JSONObject) resi.get(i)).get("modules")).get(j)).getAsString("instance");
@@ -969,6 +969,7 @@ public class AssessmentHandlerService extends RESTService {
 			        		        assessmentStarted.put(channel,"true");
 			        		        return Response.ok().entity(response).build();
 			        			} else {
+			        				
 			        				if(topicName.toLowerCase().contains(triggeredBody.getAsString("msg").toLowerCase())){
 			        					similarNames += topicCount + ". " + topicName +"\n";
 			        				}
@@ -987,6 +988,7 @@ public class AssessmentHandlerService extends RESTService {
 				}	
 				JSONObject error = new JSONObject();
 				error.put("text", "Something went wrong when trying to start your quiz. Maybe try again later...");
+
 				return Response.ok().entity(error).build();
 			}	
 		} else {
