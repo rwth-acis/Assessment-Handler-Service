@@ -787,6 +787,7 @@ public class AssessmentHandlerService extends RESTService {
 				System.out.println("Now connecting");
 				HashMap<String, String> headers = new HashMap<String, String>();
 				String courseid = null;
+				int topicNumber = 1;
 					for(int courses=0 ; courses < courseIds.size() ; courses++) {
 					courseid = courseIds.get(courses).toString();
 					ClientResponse result = client.sendRequest("GET", "/webservice/rest/server.php?wstoken=" + wstoken + "&wsfunction=core_course_get_contents&courseid=" + courseid + "&moodlewsrestformat=json" , "",
@@ -794,7 +795,7 @@ public class AssessmentHandlerService extends RESTService {
 					System.out.println(channel + "\n" + result);
 					JSONArray resi = (JSONArray) p.parse(result.getResponse());
 			        JSONObject res= new JSONObject();
-			        int topicNumber = 1;
+			        // number one comes twice?
 			        for(int i = 0; i < resi.size() ;i++) {
 			        	for(int j = 0; j < ((JSONArray)((JSONObject) resi.get(i)).get("modules")).size();j++) {
 			        		if(((JSONObject)((JSONArray)((JSONObject) resi.get(i)).get("modules")).get(j)).getAsString("modname").equals("quiz")){
@@ -808,16 +809,19 @@ public class AssessmentHandlerService extends RESTService {
 						topicNames += "No topic available";
 					} else this.topicsProposed.put(channel,true);
 					JSONObject answer = new JSONObject();
-					answer.put("text", topicNames);
+					answer.put("text","Select a quiz by responding with the corresponding number: \n"
+							+ topicNames);
 					answer.put("closeContext", "false");
 					return Response.ok().entity(answer).build();
 			} else {
 				String topicNumber = triggeredBody.getAsString("msg").split("\\.")[0];
+				String similarNames = "";
 				MiniClient client = new MiniClient();
 				client.setConnectorEndpoint(triggeredBody.getAsString("LMSURL"));
 				System.out.println("Now connecting");
 				HashMap<String, String> headers = new HashMap<String, String>();
 				String courseid = null;
+				 int topicCount = 1;
 					for(int courses=0 ; courses < courseIds.size() ; courses++) {
 					courseid = courseIds.get(courses).toString();
 					ClientResponse result = client.sendRequest("GET", "/webservice/rest/server.php?wstoken=" + wstoken + "&wsfunction=core_course_get_contents&courseid=" + courseid + "&moodlewsrestformat=json" , "",
@@ -825,13 +829,14 @@ public class AssessmentHandlerService extends RESTService {
 					System.out.println(channel + "\n" + result);
 					JSONArray resi = (JSONArray) p.parse(result.getResponse());
 			        JSONObject res= new JSONObject();
-			        int topicCount = 1;
+			        // first for loop for checking if topic exists with corresponding number or exact match with name
 			        for(int i = 0; i < resi.size() ;i++) {
 			        	for(int j = 0; j < ((JSONArray)((JSONObject) resi.get(i)).get("modules")).size();j++) {
 			        		if(((JSONObject)((JSONArray)((JSONObject) resi.get(i)).get("modules")).get(j)).getAsString("modname").equals("quiz")){
-			        			if(topicCount == Integer.parseInt(topicNumber)) {
+			        			String topicName = ((JSONObject)((JSONArray)((JSONObject) resi.get(i)).get("modules")).get(j)).getAsString("name");
+			        			if(topicCount == Integer.parseInt(topicNumber) || topicName.toLowerCase().equals(triggeredBody.getAsString("msg").toLowerCase())) {
 			        				this.topicsProposed.put(channel,null);
-			        				String topicName = ((JSONObject)((JSONArray)((JSONObject) resi.get(i)).get("modules")).get(j)).getAsString("name");
+			        				
 			        				quizid = ((JSONObject)((JSONArray)((JSONObject) resi.get(i)).get("modules")).get(j)).getAsString("instance");
 			        				if(this.topicProcessed.containsKey(topicName)) {
 			        					while(this.topicProcessed.containsKey(topicName)) {
@@ -964,15 +969,24 @@ public class AssessmentHandlerService extends RESTService {
 			        		        assessmentStarted.put(channel,"true");
 			        		        return Response.ok().entity(response).build();
 			        			} else {
+			        				if(topicName.toLowerCase().contains(triggeredBody.getAsString("msg").toLowerCase())){
+			        					similarNames += topicCount + ". " + topicName +"\n";
+			        				}
 			        				topicCount++;
 			        			}
 			        		}
 			        	}
+			        	
+			        	// here error if number is not there or the user wants to stop ? 
 			        }
 				}
-					
+				if(!similarNames.equals("")) {
+					JSONObject error = new JSONObject();
+					error.put("text", "Multiple quizzes are similar to the name you wrote, which one of these do you want to start?\n" + similarNames);
+					return Response.ok().entity(error).build();
+				}	
 				JSONObject error = new JSONObject();
-				error.put("text", "Topic not found in given courses.");
+				error.put("text", "Something went wrong when trying to start your quiz. Maybe try again later...");
 				return Response.ok().entity(error).build();
 			}	
 		} else {
