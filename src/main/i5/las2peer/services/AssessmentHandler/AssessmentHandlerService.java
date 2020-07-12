@@ -373,7 +373,7 @@ public class AssessmentHandlerService extends RESTService {
 	 		        	this.addWrongQuestion(channel);
 	        		 }
 	        	} else if(this.getQuestionType(channel).equals("multichoice")) {
-	        		if(((JSONArray) this.currentAssessment.get(channel).get("Answers")).get(this.getCurrentQuestionNumber(channel)).toString().split(";").length == 2) {
+	        		if(((JSONArray) this.currentAssessment.get(channel).get("Answers")).get(this.getCurrentQuestionNumber(channel)).toString().split(";").length <= 2) {
 	        			if(msg.length() > 1) {
 	        				answer += "Please only enter the letter/number corresponding to the given answers!\n";
 	        				JSONObject userMistake = new JSONObject();
