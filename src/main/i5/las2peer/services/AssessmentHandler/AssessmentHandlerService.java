@@ -312,7 +312,6 @@ public class AssessmentHandlerService extends RESTService {
     	String answer = "";
     	int currentQuestionNumber = this.getCurrentQuestionNumber(channel);
     	response.put("closeContext", "false");
-    	System.out.println(assessmentType + " " + intent + "  " + this.getHelpIntent(channel) +  this.getQuitIntent(channel));
         if(assessmentType.equals("NLUAssessment")) {
 	        if(intent.equals(this.getQuitIntent(channel))){
 	        	// here should not be the entire size but the current number of questions .. 
@@ -402,10 +401,8 @@ public class AssessmentHandlerService extends RESTService {
 	        			String[] userAnswers = msg.split("\\s+");
 	        			double splitMark = this.getMarkForCurrentQuestion(channel)/(multipleAnswers.length-1);
 	        			int numberOfCorrectAnswers = 0;
-	        			System.out.println(multipleAnswers.length-1);
-        				for(int j = 0 ; j < userAnswers.length; j++ ){
-        					System.out.println(userAnswers[j]);	
-        					if(userAnswers[j].length() > 1 || !this.getAnswerPossibilitiesForMCQ(channel).toLowerCase().contains(msg.toLowerCase())) {
+        				for(int j = 0 ; j < userAnswers.length; j++ ){	
+        					if(userAnswers[j].length() > 1 || !this.getAnswerPossibilitiesForMCQ(channel).toLowerCase().contains(userAnswers[j])) {
 	        					answer += "Please only enter the letters/numbers corresponding to the given answers!\n";
 		        				JSONObject userMistake = new JSONObject();
 		        				userMistake.put("text", answer);
@@ -414,12 +411,8 @@ public class AssessmentHandlerService extends RESTService {
         					}
         				}
 	        			for(int i = 0 ; i < multipleAnswers.length -1 ; i++) {
-	        				System.out.println(multipleAnswers[i]);
-	        				
 	        				for(int j = 0 ; j < userAnswers.length; j++ ){
-	        					System.out.println(userAnswers[j]);	
 	        					if(userAnswers[j].length() > 1 ) {
-	        						System.out.println("answer was larger than 1");
 	        						continue;
 	        					} else if(multipleAnswers[i].toLowerCase().contains(userAnswers[j].toLowerCase())) {
 	        						numberOfCorrectAnswers++;
@@ -520,7 +513,6 @@ public class AssessmentHandlerService extends RESTService {
         
     private void incrementMark(String channel, double value) {
     	this.currentAssessment.get(channel).put("currentMark", Double.parseDouble(this.getMarks(channel)) + (Math.round(value*100.0)/100.0));
-    	System.out.println("doule is  :" + Double.parseDouble(this.getMarks(channel)) + value + "=" +  this.getMarks(channel));
     } 
     
     private void addWrongQuestion(String channel) {
@@ -776,7 +768,7 @@ public class AssessmentHandlerService extends RESTService {
 			triggeredBody.put("courseId", courseId);
 		}
 		JSONArray courseIds =(JSONArray) triggeredBody.get("courseId");
-		
+		System.out.println(triggeredBody.getAsString("msg"));
 		String quizid="";
 		String attemptId = "";
 		if(assessmentStarted.get(channel) == null) {
@@ -792,18 +784,16 @@ public class AssessmentHandlerService extends RESTService {
 					courseid = courseIds.get(courses).toString();
 					ClientResponse result = client.sendRequest("GET", "/webservice/rest/server.php?wstoken=" + wstoken + "&wsfunction=core_course_get_contents&courseid=" + courseid + "&moodlewsrestformat=json" , "",
 							"", MediaType.APPLICATION_JSON, headers);
-					System.out.println(channel + "\n" + result);
 					JSONArray resi = (JSONArray) p.parse(result.getResponse());
 			        JSONObject res= new JSONObject();
-			        // number one comes twice?
-			        for(int i = 0; i < resi.size() ;i++) {
-			        	for(int j = 0; j < ((JSONArray)((JSONObject) resi.get(i)).get("modules")).size();j++) {
-			        		if(((JSONObject)((JSONArray)((JSONObject) resi.get(i)).get("modules")).get(j)).getAsString("modname").equals("quiz")){
-			        			topicNames+= topicNumber + "." +  (((JSONObject)((JSONArray)((JSONObject) resi.get(i)).get("modules")).get(j)).getAsString("name")) +"\n";
-			        			topicNumber++;
-			        		}
-			        	}
-			        }
+				        for(int i = 0; i < resi.size() ;i++) {
+				        	for(int j = 0; j < ((JSONArray)((JSONObject) resi.get(i)).get("modules")).size();j++) {
+				        		if(((JSONObject)((JSONArray)((JSONObject) resi.get(i)).get("modules")).get(j)).getAsString("modname").equals("quiz")){
+				        			topicNames+= topicNumber + "." +  (((JSONObject)((JSONArray)((JSONObject) resi.get(i)).get("modules")).get(j)).getAsString("name")) +"\n";
+				        			topicNumber++;
+				        		}
+				        	}
+				        }
 					}
 					if(topicNames.equals("")) {
 						topicNames += "No topic available";
@@ -829,17 +819,17 @@ public class AssessmentHandlerService extends RESTService {
 					System.out.println(channel + "\n" + result);
 					JSONArray resi = (JSONArray) p.parse(result.getResponse());
 			        JSONObject res= new JSONObject();
+			        System.out.println(resi.size());
 			        // first for loop for checking if topic exists with corresponding number or exact match with name
 			        for(int i = 0; i < resi.size() ;i++) {
 			        	for(int j = 0; j < ((JSONArray)((JSONObject) resi.get(i)).get("modules")).size();j++) {
 			        		if(((JSONObject)((JSONArray)((JSONObject) resi.get(i)).get("modules")).get(j)).getAsString("modname").equals("quiz")){
 			        			String topicName = ((JSONObject)((JSONArray)((JSONObject) resi.get(i)).get("modules")).get(j)).getAsString("name");
 			        			if(String.valueOf(topicCount).equals(chosenTopicNumber) || topicName.toLowerCase().equals(triggeredBody.getAsString("msg").toLowerCase())) {
-			        				this.topicsProposed.put(channel,null);
-			        				
+			        				this.topicsProposed.remove(channel);
 			        				quizid = ((JSONObject)((JSONArray)((JSONObject) resi.get(i)).get("modules")).get(j)).getAsString("instance");
 			        				if(this.topicProcessed.containsKey(topicName)) {
-			        					while(this.topicProcessed.containsKey(topicName)) {
+			        					while(this.topicProcessed.get(topicName)) {
 				        					// add catch exception with the parsing and set the bool var to false if error
 				        				} 
 			        				}
@@ -848,19 +838,14 @@ public class AssessmentHandlerService extends RESTService {
 			        				result = client.sendRequest("GET", "/webservice/rest/server.php?wstoken=" + wstoken + "&wsfunction=mod_quiz_start_attempt&quizid=" + quizid + "&moodlewsrestformat=json" , "",
 			        						"", MediaType.APPLICATION_JSON, headers);
 			        		        res = (JSONObject) p.parse(result.getResponse());
-			        		        System.out.println(channel + "\n" + res);
 			        		        attemptId = ((JSONObject) res.get("attempt")).getAsString("id");
 			        		        result = client.sendRequest("GET", "/webservice/rest/server.php?wstoken=" + wstoken + "&wsfunction=mod_quiz_process_attempt&attemptid=" + attemptId + "&finishattempt=1&moodlewsrestformat=json" , "",
 			        						"", MediaType.APPLICATION_JSON, headers);
 			        		        this.topicProcessed.put(topicName, false);
 			        		        this.attemptStartedOnMoodle = false;
-			        		        System.out.println(channel + "\n" + result);
-			        		        System.out.println(result.getResponse());
 			        		        result = client.sendRequest("GET", "/webservice/rest/server.php?wstoken=" + wstoken + "&wsfunction=mod_quiz_get_attempt_review&attemptid=" + attemptId + "&page=-1&moodlewsrestformat=json" , "",
-			        						"", MediaType.APPLICATION_JSON, headers);
-			        		        
+			        						"", MediaType.APPLICATION_JSON, headers);     
 			        		        res = (JSONObject) p.parse(result.getResponse());
-			        		        System.out.println(channel + "\n" + res);
 			        		        String html = "";
 			        		        Document doc = Jsoup.parse("<html></html>");
 			        		        String questions = "";
@@ -886,7 +871,6 @@ public class AssessmentHandlerService extends RESTService {
 			        		        			if(doc.getElementsByClass("qtext").get(0).getElementsByTag("p").get(l).text().equals("") && doc.getElementsByClass("qtext").get(0).getElementsByTag("p").size() == 1) {
 			        		        				questions +=  "*"+doc.getElementsByClass("qtext").text() + "*\n";
 			        		        			}
-			        		        			System.out.println(doc.getElementsByClass("qtext").get(0).getElementsByTag("p").get(l));
 			        		        		}
 		        		        		}
 		        		        		assessment[k][0] = questions ;
@@ -984,14 +968,16 @@ public class AssessmentHandlerService extends RESTService {
 				if(!similarNames.equals("")) {
 					JSONObject error = new JSONObject();
 					error.put("text", "Multiple quizzes are similar to the name you wrote, which one of these do you want to start?\n" + similarNames);
+					error.put("closeContext" , "false");
 					return Response.ok().entity(error).build();
 				}	
 				JSONObject error = new JSONObject();
 				error.put("text", "Something went wrong when trying to start your quiz. Maybe try again later...");
-
+				this.topicsProposed.remove(channel);
 				return Response.ok().entity(error).build();
 			}	
 		} else {
+			System.out.println("Why doesnt this work");
 			return Response.ok().entity(continueJSONAssessment(channel, triggeredBody.getAsString("intent"), triggeredBody, "moodleAssessment")).build();
 		}  
 	}
