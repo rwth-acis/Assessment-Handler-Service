@@ -432,13 +432,14 @@ public class AssessmentHandlerService extends RESTService {
 	        					if(numberOfCorrectAnswers == 0) {
 	        						answer += "Your answers were all wrong\n";
 	        					} else answer += "Your answer was partially correct, you got " + numberOfCorrectAnswers + " correct answer(s) and " + (userAnswers.length-numberOfCorrectAnswers) + " wrong one(s)\n";
-	        					
 	        					this.incrementMark(channel, splitMark*numberOfCorrectAnswers);
+	        					this.addWrongQuestion(channel);
 	        				} else {
 	        					answer += "You somehow managed to get more points than intended\n";
 	        					this.incrementMark(channel, this.getMarkForCurrentQuestion(channel));
 	        				}
 	        			} else if((multipleAnswers.length-1) > userAnswers.length) {
+	        				 this.addWrongQuestion(channel);
 	        				 if(userAnswers.length > numberOfCorrectAnswers) {  
 	        					if(numberOfCorrectAnswers == 0) {
 	        						answer += "Your answers were all wrong\n";
@@ -452,6 +453,7 @@ public class AssessmentHandlerService extends RESTService {
 	        					this.incrementMark(channel, numberOfCorrectAnswers*splitMark);
 	        				}
 	        			} else if((multipleAnswers.length-1) < userAnswers.length) {
+	        				this.addWrongQuestion(channel);
 	        				// careful here, - points if someone has too many answers
 	        				 answer += "Your answer was partially correct, you got " + numberOfCorrectAnswers + " correct answer(s) and " + (userAnswers.length-numberOfCorrectAnswers) + " wrong one(s)\n";
 	        				 int points = numberOfCorrectAnswers - userAnswers.length; 
