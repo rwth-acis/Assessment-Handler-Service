@@ -373,7 +373,9 @@ public class AssessmentHandlerService extends RESTService {
 	 		        	this.addWrongQuestion(channel);
 	        		 }
 	        	} else if(this.getQuestionType(channel).equals("multichoice")) {
+	        		
 	        		if(((JSONArray) this.currentAssessment.get(channel).get("Answers")).get(this.getCurrentQuestionNumber(channel)).toString().split(";").length <= 2) {
+	        			System.out.println("A");
 	        			if(msg.length() > 1) {
 	        				answer += "Please only enter the letter/number corresponding to the given answers!\n";
 	        				JSONObject userMistake = new JSONObject();
@@ -381,6 +383,7 @@ public class AssessmentHandlerService extends RESTService {
 	        				userMistake.put("closeContext", "false");
 	        				return userMistake;
 	        			} else {
+	        				System.out.println(this.getAnswerPossibilitiesForMCQ(channel));
 	        				if(!this.getAnswerPossibilitiesForMCQ(channel).toLowerCase().contains(msg.toLowerCase())) {
 	        					answer += "Please only enter the letter/number corresponding to the given answers!\n";
 		        				JSONObject userMistake = new JSONObject();
@@ -539,7 +542,8 @@ public class AssessmentHandlerService extends RESTService {
     	 String answers = ((JSONArray) this.currentAssessment.get(channel).get("Possibilities")).get(this.getCurrentQuestionNumber(channel)).toString();
     	 String[] splitLineBreak = answers.split("\\n");
     	 String concat = "";
-    	 for(int i = 0 ; i < splitLineBreak.length ; i++) {
+    	 // i = 1 bcs "select one or more" is part of the string. 
+    	 for(int i = 1 ; i < splitLineBreak.length ; i++) {
     		 concat += splitLineBreak[i].split("\\.")[0];
     	 }
     	 return concat;
@@ -789,7 +793,7 @@ public class AssessmentHandlerService extends RESTService {
 				        for(int i = 0; i < resi.size() ;i++) {
 				        	for(int j = 0; j < ((JSONArray)((JSONObject) resi.get(i)).get("modules")).size();j++) {
 				        		if(((JSONObject)((JSONArray)((JSONObject) resi.get(i)).get("modules")).get(j)).getAsString("modname").equals("quiz")){
-				        			topicNames+= topicNumber + "." +  (((JSONObject)((JSONArray)((JSONObject) resi.get(i)).get("modules")).get(j)).getAsString("name")) +"\n";
+				        			topicNames+=" • " + topicNumber + ". " +  (((JSONObject)((JSONArray)((JSONObject) resi.get(i)).get("modules")).get(j)).getAsString("name")) +"\n";
 				        			topicNumber++;
 				        		}
 				        	}
@@ -811,15 +815,15 @@ public class AssessmentHandlerService extends RESTService {
 				System.out.println("Now connecting");
 				HashMap<String, String> headers = new HashMap<String, String>();
 				String courseid = null;
-				 int topicCount = 1;
-					for(int courses=0 ; courses < courseIds.size() ; courses++) {
-					courseid = courseIds.get(courses).toString();
-					ClientResponse result = client.sendRequest("GET", "/webservice/rest/server.php?wstoken=" + wstoken + "&wsfunction=core_course_get_contents&courseid=" + courseid + "&moodlewsrestformat=json" , "",
-							"", MediaType.APPLICATION_JSON, headers);
-					System.out.println(channel + "\n" + result);
-					JSONArray resi = (JSONArray) p.parse(result.getResponse());
-			        JSONObject res= new JSONObject();
-			        System.out.println(resi.size());
+		        ArrayList<String> similarTopicNames = new ArrayList<String>();
+				int topicCount = 1;
+				for(int courses=0 ; courses < courseIds.size() ; courses++) {
+				courseid = courseIds.get(courses).toString();
+				ClientResponse result = client.sendRequest("GET", "/webservice/rest/server.php?wstoken=" + wstoken + "&wsfunction=core_course_get_contents&courseid=" + courseid + "&moodlewsrestformat=json" , "",
+						"", MediaType.APPLICATION_JSON, headers);
+				System.out.println(channel + "\n" + result);
+				JSONArray resi = (JSONArray) p.parse(result.getResponse());
+		        JSONObject res= new JSONObject();
 			        // first for loop for checking if topic exists with corresponding number or exact match with name
 			        for(int i = 0; i < resi.size() ;i++) {
 			        	for(int j = 0; j < ((JSONArray)((JSONObject) resi.get(i)).get("modules")).size();j++) {
@@ -955,7 +959,8 @@ public class AssessmentHandlerService extends RESTService {
 			        			} else {
 			        				
 			        				if(topicName.toLowerCase().contains(triggeredBody.getAsString("msg").toLowerCase())){
-			        					similarNames += topicCount + ". " + topicName +"\n";
+			        					similarNames +=" • "+ topicCount + ". " + topicName +"\n";
+			        					similarTopicNames.add(topicName);
 			        				}
 			        				topicCount++;
 			        			}
@@ -966,6 +971,13 @@ public class AssessmentHandlerService extends RESTService {
 			        }
 				}
 				if(!similarNames.equals("")) {
+					// not the most efficient way, but at least readable
+					System.out.println(similarTopicNames.size());
+					if(similarTopicNames.size() == 1) {
+						System.out.println("AA");
+						triggeredBody.put("msg", similarTopicNames.get(0));
+						return moodleQuiz(triggeredBody.toString());
+					}
 					JSONObject error = new JSONObject();
 					error.put("text", "Multiple quizzes are similar to the name you wrote, which one of these do you want to start?\n" + similarNames);
 					error.put("closeContext" , "false");
