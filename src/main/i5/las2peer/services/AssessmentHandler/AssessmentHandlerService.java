@@ -346,8 +346,8 @@ public class AssessmentHandlerService extends RESTService {
 	        
         } else if(assessmentType == "moodleAssessment") {
 	        if(intent.equals(this.getQuitIntent(channel))) {
-	        	answer += "Assessment is over \n" + "Your final mark is *" + this.getMarks(channel) + "/" + this.getTotalMarksUntilCurrentQuestion(channel) + "* \n";  	
-	            if(this.getMarks(channel).equals(this.getTotalMarksUntilCurrentQuestion(channel))) {
+	        	answer += "Assessment is over \n" + "Your final mark is *" + this.getMarks(channel) + "/" + (this.getTotalMarksUntilCurrentQuestion(channel) - this.getMarkForCurrentQuestion(channel)) + "* \n";  	
+	            if(this.getMarks(channel).equals((this.getTotalMarksUntilCurrentQuestion(channel) - this.getMarkForCurrentQuestion(channel)))) {
 	            	answer += "You got no questions wrong!";
 	            } else answer += "You got following Questions wrong: \n " + this.getWrongQuestions(channel);
 	        	this.assessmentStarted.put(channel, null);
@@ -471,6 +471,139 @@ public class AssessmentHandlerService extends RESTService {
 		        	if(this.getMarks(channel).equals(String.valueOf(this.getAssessmentSize(channel)))) {
 		        		answer += "Assessment is over \n" + "Your final mark is *" + this.getMarks(channel) + "/" + this.getMaxMarks(channel) + "* \n You got no Questions wrong! \n " + this.getWrongQuestions(channel);
 		        	} else answer += "Assessment is over \n" + "Your final mark is *" + this.getMarks(channel) + "/" + this.getMaxMarks(channel) + "*  \n You got following Questions wrong: \n " + this.getWrongQuestions(channel);
+		            this.assessmentStarted.put(channel, null);
+		            response.put("closeContext", "true");
+		        } else {
+		            answer += ((JSONArray)this.currentAssessment.get(channel).get("Questions")).get(this.getCurrentQuestionNumber(channel)).toString() + ((JSONArray)this.currentAssessment.get(channel).get("Possibilities")).get(this.getCurrentQuestionNumber(channel)).toString() ;        
+		        }
+	        }
+        } else if(assessmentType == "moodleAssessmentDE") {
+	        if(intent.equals(this.getQuitIntent(channel))) {
+	        	answer += "Assessment ist fertig \n" + "Dein Endresultat ist *" + this.getMarks(channel) + "/" + this.getTotalMarksUntilCurrentQuestion(channel) + "* \n";  	
+	            if(this.getMarks(channel).equals(this.getTotalMarksUntilCurrentQuestion(channel))) {
+	            	answer += "Du hast keine falsche Antworten!";
+	            } else answer += "Du hast folgende Fragen falsch beantwortet: \n " + this.getWrongQuestions(channel);
+	        	this.assessmentStarted.put(channel, null);
+	            response.put("closeContext", "true");
+	        } else { 
+	        	String msg = triggeredBody.getAsString("msg");
+	        	// differ between true false / multiple answers, one answer 
+	        	// for multiple choice split with "," to have all the answers
+	        	if(this.getQuestionType(channel).equals("numerical") || this.getQuestionType(channel).equals("shortanswer") ) {
+	        		 if(((JSONArray) this.currentAssessment.get(channel).get("Answers")).get(this.getCurrentQuestionNumber(channel)).toString().toLowerCase().equals(msg.toLowerCase())) {
+	        			answer += "Richtige Antwort! \n";
+	        			this.incrementMark(channel, this.getMarkForCurrentQuestion(channel));
+	        		 } else {
+	        			 answer += "Falsche Antwort :/ \n";
+	 		        	this.addWrongQuestion(channel);
+	        		 }
+	        	} else if(this.getQuestionType(channel).equals("truefalse")) {
+	        		 if(((JSONArray) this.currentAssessment.get(channel).get("Answers")).get(this.getCurrentQuestionNumber(channel)).toString().toLowerCase().contains(msg.toLowerCase())) {
+	        			answer += "Richtige Antwort! \n";
+	 		            this.incrementMark(channel, this.getMarkForCurrentQuestion(channel));
+	        		 } else {
+	        			answer += "Falsche Antwort :/ \n";
+	 		        	this.addWrongQuestion(channel);
+	        		 }
+	        	} else if(this.getQuestionType(channel).equals("multichoice")) {
+	        		
+	        		if(((JSONArray) this.currentAssessment.get(channel).get("Answers")).get(this.getCurrentQuestionNumber(channel)).toString().split(";").length <= 2) {
+	        			System.out.println("A");
+	        			if(msg.length() > 1) {
+	        				answer += "Bitte antworte nur mit den vorgegebenen Buchstaben/Zahlen!\n";
+	        				JSONObject userMistake = new JSONObject();
+	        				userMistake.put("text", answer);
+	        				userMistake.put("closeContext", "false");
+	        				return userMistake;
+	        			} else {
+	        				System.out.println(this.getAnswerPossibilitiesForMCQ(channel));
+	        				if(!this.getAnswerPossibilitiesForMCQ(channel).toLowerCase().contains(msg.toLowerCase())) {
+	        					answer += "Bitte antworte nur mit den vorgegebenen Buchstaben/Zahlen!\n";
+		        				JSONObject userMistake = new JSONObject();
+		        				userMistake.put("text", answer);
+		        				userMistake.put("closeContext", "false");
+		        				return userMistake;
+	        				}
+		        			if(((JSONArray) this.currentAssessment.get(channel).get("Answers")).get(this.getCurrentQuestionNumber(channel)).toString().toLowerCase().contains(msg.toLowerCase())) {
+			        			answer += "Richtige Antwort! \n";
+			        			this.incrementMark(channel, this.getMarkForCurrentQuestion(channel));
+			        		 } else {
+			        			answer += "Falsche Antwort :/ \n";
+			 		        	this.addWrongQuestion(channel);
+			        		 }
+	        			}
+	        		} else {
+	        			String[] multipleAnswers = ((JSONArray) this.currentAssessment.get(channel).get("Answers")).get(this.getCurrentQuestionNumber(channel)).toString().split(";");
+	        			String[] userAnswers = msg.split("\\s+");
+	        			double splitMark = this.getMarkForCurrentQuestion(channel)/(multipleAnswers.length-1);
+	        			int numberOfCorrectAnswers = 0;
+        				for(int j = 0 ; j < userAnswers.length; j++ ){	
+        					if(userAnswers[j].length() > 1 || !this.getAnswerPossibilitiesForMCQ(channel).toLowerCase().contains(userAnswers[j])) {
+	        					answer += "Bitte antworte nur mit den vorgegebenen Buchstaben/Zahlen!\n";
+		        				JSONObject userMistake = new JSONObject();
+		        				userMistake.put("text", answer);
+		        				userMistake.put("closeContext", "false");
+		        				return userMistake;
+        					}
+        				}
+	        			for(int i = 0 ; i < multipleAnswers.length -1 ; i++) {
+	        				for(int j = 0 ; j < userAnswers.length; j++ ){
+	        					if(userAnswers[j].length() > 1 ) {
+	        						continue;
+	        					} else if(multipleAnswers[i].toLowerCase().contains(userAnswers[j].toLowerCase())) {
+	        						numberOfCorrectAnswers++;
+	        						break;
+	        					}
+	        				}
+	        			}
+	        			if((multipleAnswers.length-1) == userAnswers.length ) {
+	        				if(userAnswers.length == numberOfCorrectAnswers) {
+	        					answer += "Richtige Antwort(en)! \n";
+	        					this.incrementMark(channel, this.getMarkForCurrentQuestion(channel));
+	        				} else if(userAnswers.length > numberOfCorrectAnswers) {
+	        					// what if 0 points  ?  
+	        					if(numberOfCorrectAnswers == 0) {
+	        						answer += "Deine Antworten waren alle falsch\n";
+	        					} else answer += "Deine Antwort war teilweise richtig, du hast " + numberOfCorrectAnswers + " richtige Antwort(en) und " + (userAnswers.length-numberOfCorrectAnswers) + " falsche\n";
+	        					this.incrementMark(channel, splitMark*numberOfCorrectAnswers);
+	        					this.addWrongQuestion(channel);
+	        				} else {
+	        					answer += "Du hast mehr Punkte bekommen als vorgegeben?!\n";
+	        					this.incrementMark(channel, this.getMarkForCurrentQuestion(channel));
+	        				}
+	        			} else if((multipleAnswers.length-1) > userAnswers.length) {
+	        				 this.addWrongQuestion(channel);
+	        				 if(userAnswers.length > numberOfCorrectAnswers) {  
+	        					if(numberOfCorrectAnswers == 0) {
+	        						answer += "Deine Antworten waren alle falsch\n";
+	        					} else answer += "Deine Antwort war teilweise richtig, du hast " + numberOfCorrectAnswers + " richtige Antwort(en) und " + (userAnswers.length-numberOfCorrectAnswers) + " falsche\n";
+	        					this.incrementMark(channel, splitMark*numberOfCorrectAnswers);
+	        				} else if(userAnswers.length == numberOfCorrectAnswers) {
+	        					answer += "Deine Antwort war teilweise richtig, du hast " + numberOfCorrectAnswers + " richtige Antwort(en)";
+	        					this.incrementMark(channel, numberOfCorrectAnswers*splitMark);
+	        				} else {
+	        					answer += "Du hast mehr Punkte bekommen als vorgegeben?!\n";
+	        					this.incrementMark(channel, numberOfCorrectAnswers*splitMark);
+	        				}
+	        			} else if((multipleAnswers.length-1) < userAnswers.length) {
+	        				this.addWrongQuestion(channel);
+	        				// careful here, - points if someone has too many answers
+	        				 answer += "Deine Antwort war teilweise richtig, du hast " + numberOfCorrectAnswers + " richtige Antwort(en) und " + (userAnswers.length-numberOfCorrectAnswers) + " falsche\n";
+	        				 int points = numberOfCorrectAnswers - userAnswers.length; 
+	        				 if(points >= 0) {
+	        					 this.incrementMark(channel, numberOfCorrectAnswers*splitMark);
+	        				 }
+	        			}	
+	        		}
+	        	}
+	        	if(!((JSONArray)this.currentAssessment.get(channel).get("Feedback")).get(this.getCurrentQuestionNumber(channel)).toString().equals("")) {
+	        		answer += ((JSONArray)this.currentAssessment.get(channel).get("Feedback")).get(this.getCurrentQuestionNumber(channel)).toString() + "\n";
+	        	}
+	        	this.incrementCounter(channel);
+		        if(this.getCurrentQuestionNumber(channel) == getAssessmentSize(channel)){
+		        	if(this.getMarks(channel).equals(String.valueOf(this.getAssessmentSize(channel)))) {
+		        		answer += "Assessment ist fertig \n" + "Dein Endresultat ist *" + this.getMarks(channel) + "/" + this.getMaxMarks(channel) + "* \n Du hast keine falsche Fragen \n " + this.getWrongQuestions(channel);
+		        	} else answer += "Assessment ist fertig \n" + "Dein Endresultat ist *" + this.getMarks(channel) + "/" + this.getMaxMarks(channel) + "*  \n Du hast folgende Fragen falsch beantwortet: \n " + this.getWrongQuestions(channel);
 		            this.assessmentStarted.put(channel, null);
 		            response.put("closeContext", "true");
 		        } else {
@@ -884,12 +1017,12 @@ public class AssessmentHandlerService extends RESTService {
 		        		        		System.out.println(doc.getElementsByClass("qtext").text());
 		        		        		// to differentiate between questions with one answer and questions with multiple correct answers
 		        		        		if(doc.getElementsByClass("rightanswer").text().contains("answers")) {
-		        		        			assessment[k][3] += "Select one or more: (Separate your answers with a whitespace, e.g : a b)\n";
+		        		        			assessment[k][3] += "Select one or more (Separate your answers with a whitespace, e.g : a b): \n";
 		        		        			answers += doc.getElementsByClass("rightanswer").text().split("The correct answers are")[1] +"\n";
 		        		        			assessment[k][1] = doc.getElementsByClass("rightanswer").text().split("The correct answers are")[1];
 		        		        		} else {
 		        		        			if(assessment[k][2].equals("multichoice")) {
-		        		        				assessment[k][3] += "Select one :(choose by simply answering with the associated letter/number)\n";
+		        		        				assessment[k][3] += "Select one (choose by simply answering with the associated letter/number):\n";
 		        		        			} else if(assessment[k][2].equals("truefalse")) {
 		        		        				assessment[k][3] += "Select one:\n";
 		        		        			}
@@ -995,6 +1128,254 @@ public class AssessmentHandlerService extends RESTService {
 			return Response.ok().entity(continueJSONAssessment(channel, triggeredBody.getAsString("intent"), triggeredBody, "moodleAssessment")).build();
 		}  
 	}
+    
+    // currently the same as previous method only with german strings -> TODO: find a better way to do this to make the code less redundant
+    @POST
+	@Path("/moodleQuizDE")
+    @Consumes(MediaType.TEXT_PLAIN)
+	@Produces(MediaType.APPLICATION_JSON)
+	@ApiOperation(
+			value = "REPLACE THIS WITH AN APPROPRIATE FUNCTION NAME",
+			notes = "REPLACE THIS WITH YOUR NOTES TO THE FUNCTION")
+	@ApiResponses(
+			value = { @ApiResponse(
+					code = HttpURLConnection.HTTP_OK,
+					message = "REPLACE THIS WITH YOUR OK MESSAGE") })
+	public Response moodleQuizDe(String body) throws ParseException {
+    	System.out.println(body);
+		JSONParser p = new JSONParser(JSONParser.MODE_PERMISSIVE);
+		JSONObject triggeredBody = (JSONObject) p.parse(body);
+		String channel = triggeredBody.getAsString("channel");
+		String wstoken = triggeredBody.getAsString("wstoken");
+		if(!(triggeredBody.get("courseId") instanceof JSONArray)) {
+			System.out.println("course id is :");
+			JSONArray courseId = new JSONArray();
+			courseId.add(triggeredBody.get("courseId"));
+			triggeredBody.put("courseId", courseId);
+		}
+		JSONArray courseIds =(JSONArray) triggeredBody.get("courseId");
+		System.out.println(triggeredBody.getAsString("msg"));
+		String quizid="";
+		String attemptId = "";
+		if(assessmentStarted.get(channel) == null) {
+			if(this.topicsProposed.get(channel) == null) {
+				String topicNames="";
+				MiniClient client = new MiniClient();
+				client.setConnectorEndpoint(triggeredBody.getAsString("LMSURL"));
+				System.out.println("Now connecting");
+				HashMap<String, String> headers = new HashMap<String, String>();
+				String courseid = null;
+				int topicNumber = 1;
+					for(int courses=0 ; courses < courseIds.size() ; courses++) {
+					courseid = courseIds.get(courses).toString();
+					ClientResponse result = client.sendRequest("GET", "/webservice/rest/server.php?wstoken=" + wstoken + "&wsfunction=core_course_get_contents&courseid=" + courseid + "&moodlewsrestformat=json" , "",
+							"", MediaType.APPLICATION_JSON, headers);
+					JSONArray resi = (JSONArray) p.parse(result.getResponse());
+			        JSONObject res= new JSONObject();
+				        for(int i = 0; i < resi.size() ;i++) {
+				        	for(int j = 0; j < ((JSONArray)((JSONObject) resi.get(i)).get("modules")).size();j++) {
+				        		if(((JSONObject)((JSONArray)((JSONObject) resi.get(i)).get("modules")).get(j)).getAsString("modname").equals("quiz")){
+				        			topicNames+=" • " + topicNumber + ". " +  (((JSONObject)((JSONArray)((JSONObject) resi.get(i)).get("modules")).get(j)).getAsString("name")) +"\n";
+				        			topicNumber++;
+				        		}
+				        	}
+				        }
+					}
+					if(topicNames.equals("")) {
+						topicNames += "No topic available";
+					} else this.topicsProposed.put(channel,true);
+					JSONObject answer = new JSONObject();
+					answer.put("text","Wähle ein Quiz indem du mit der entsprechenden Nummer oder dem entsprechenden Name antwortest:\n"
+							+ topicNames);
+					answer.put("closeContext", "false");
+					return Response.ok().entity(answer).build();
+			} else {
+				String chosenTopicNumber = triggeredBody.getAsString("msg").split("\\.")[0];
+				String similarNames = "";
+				MiniClient client = new MiniClient();
+				client.setConnectorEndpoint(triggeredBody.getAsString("LMSURL"));
+				System.out.println("Now connecting");
+				HashMap<String, String> headers = new HashMap<String, String>();
+				String courseid = null;
+		        ArrayList<String> similarTopicNames = new ArrayList<String>();
+				int topicCount = 1;
+				for(int courses=0 ; courses < courseIds.size() ; courses++) {
+				courseid = courseIds.get(courses).toString();
+				ClientResponse result = client.sendRequest("GET", "/webservice/rest/server.php?wstoken=" + wstoken + "&wsfunction=core_course_get_contents&courseid=" + courseid + "&moodlewsrestformat=json" , "",
+						"", MediaType.APPLICATION_JSON, headers);
+				System.out.println(channel + "\n" + result);
+				JSONArray resi = (JSONArray) p.parse(result.getResponse());
+		        JSONObject res= new JSONObject();
+			        // first for loop for checking if topic exists with corresponding number or exact match with name
+			        for(int i = 0; i < resi.size() ;i++) {
+			        	for(int j = 0; j < ((JSONArray)((JSONObject) resi.get(i)).get("modules")).size();j++) {
+			        		if(((JSONObject)((JSONArray)((JSONObject) resi.get(i)).get("modules")).get(j)).getAsString("modname").equals("quiz")){
+			        			String topicName = ((JSONObject)((JSONArray)((JSONObject) resi.get(i)).get("modules")).get(j)).getAsString("name");
+			        			if(String.valueOf(topicCount).equals(chosenTopicNumber) || topicName.toLowerCase().equals(triggeredBody.getAsString("msg").toLowerCase())) {
+			        				this.topicsProposed.remove(channel);
+			        				quizid = ((JSONObject)((JSONArray)((JSONObject) resi.get(i)).get("modules")).get(j)).getAsString("instance");
+			        				if(this.topicProcessed.containsKey(topicName)) {
+			        					while(this.topicProcessed.get(topicName)) {
+				        					// add catch exception with the parsing and set the bool var to false if error
+				        				} 
+			        				}
+			        				this.topicProcessed.put(topicName, true);
+			        				this.attemptStartedOnMoodle = true;	
+			        				result = client.sendRequest("GET", "/webservice/rest/server.php?wstoken=" + wstoken + "&wsfunction=mod_quiz_start_attempt&quizid=" + quizid + "&moodlewsrestformat=json" , "",
+			        						"", MediaType.APPLICATION_JSON, headers);
+			        		        res = (JSONObject) p.parse(result.getResponse());
+			        		        attemptId = ((JSONObject) res.get("attempt")).getAsString("id");
+			        		        result = client.sendRequest("GET", "/webservice/rest/server.php?wstoken=" + wstoken + "&wsfunction=mod_quiz_process_attempt&attemptid=" + attemptId + "&finishattempt=1&moodlewsrestformat=json" , "",
+			        						"", MediaType.APPLICATION_JSON, headers);
+			        		        this.topicProcessed.put(topicName, false);
+			        		        this.attemptStartedOnMoodle = false;
+			        		        result = client.sendRequest("GET", "/webservice/rest/server.php?wstoken=" + wstoken + "&wsfunction=mod_quiz_get_attempt_review&attemptid=" + attemptId + "&page=-1&moodlewsrestformat=json" , "",
+			        						"", MediaType.APPLICATION_JSON, headers);     
+			        		        res = (JSONObject) p.parse(result.getResponse());
+			        		        String html = "";
+			        		        Document doc = Jsoup.parse("<html></html>");
+			        		        String questions = "";
+			        		        String answers = "";
+			        		        String[][] assessment = new String[((JSONArray) res.get("questions")).size()][7];
+			        		        for(int k = 0 ; k < ((JSONArray) res.get("questions")).size() ; k++) {
+			        		        	html =  ((JSONObject)((JSONArray) res.get("questions")).get(k)).getAsString("html");
+			        		        	doc = Jsoup.parse(html);
+			        		        	assessment[k][3] = "";
+			        		        	assessment[k][4] = "";
+			        		        	assessment[k][5] = doc.getElementsByClass("grade").text().split("Marked out of ")[1];
+			        		        	if(doc.getElementsByClass("generalfeedback") != null) {
+			        		        		assessment[k][6] = doc.getElementsByClass("generalfeedback").text();
+			        		        	} else assessment[k][6] = "";
+		        		        		questions = "";
+		        		        		if(doc.getElementsByClass("qtext").get(0).getElementsByTag("p").size() == 0) {
+		        		        			questions = "*"+doc.getElementsByClass("qtext").text() + "*\n";
+		        		        		} else {
+		        		        			for(int l = 0 ; l < doc.getElementsByClass("qtext").get(0).getElementsByTag("p").size() ; l++) {
+			        		        			if(!doc.getElementsByClass("qtext").get(0).getElementsByTag("p").get(l).text().equals("")) {
+			        		        				questions +=  "*"+doc.getElementsByClass("qtext").get(0).getElementsByTag("p").get(l).text() + "*\n";
+			        		        			}
+			        		        			if(doc.getElementsByClass("qtext").get(0).getElementsByTag("p").get(l).text().equals("") && doc.getElementsByClass("qtext").get(0).getElementsByTag("p").size() == 1) {
+			        		        				questions +=  "*"+doc.getElementsByClass("qtext").text() + "*\n";
+			        		        			}
+			        		        		}
+		        		        		}
+		        		        		assessment[k][0] = questions ;
+		        		        		assessment[k][2] = ((JSONObject)((JSONArray) res.get("questions")).get(k)).getAsString("type");
+		        		        		System.out.println(doc.getElementsByClass("qtext").text());
+		        		        		// to differentiate between questions with one answer and questions with multiple correct answers
+		        		        		if(doc.getElementsByClass("rightanswer").text().contains("answers")) {
+		        		        			assessment[k][3] += "Wähle eine oder mehrere Antworten ( Trenne deine Antworten mit einem Leerzeichen, bsp. : a b): \n";
+		        		        			answers += doc.getElementsByClass("rightanswer").text().split("The correct answers are")[1] +"\n";
+		        		        			assessment[k][1] = doc.getElementsByClass("rightanswer").text().split("The correct answers are")[1];
+		        		        		} else {
+		        		        			if(assessment[k][2].equals("multichoice")) {
+		        		        				assessment[k][3] += "Wähle eine Antwort (Antworte mit dem entsprechenden Buchstaben/Nummer): \n";
+		        		        			} else if(assessment[k][2].equals("truefalse")) {
+		        		        				assessment[k][3] += "Wähle eine Antwort:\n";
+		        		        			}
+		        		        			answers += doc.getElementsByClass("rightanswer").text().split("The correct answer is")[1] +"\n";
+		        		        			if(assessment[k][2].equals("truefalse")) {
+		        		        				assessment[k][1] = doc.getElementsByClass("rightanswer").text().split("The correct answer is")[1];
+		        		        			} else assessment[k][1] = doc.getElementsByClass("rightanswer").text().split("The correct answer is: ")[1];
+		        		        			
+		        		        		}
+		        		        		if(assessment[k][2].equals("multichoice") || assessment[k][2].equals("truefalse")) {
+		        		        			// check if answers or answer here ? 
+		        		        			Elements multiChoiceAnswers = doc.getElementsByClass("ml-1");
+		        		        			for(Element item : multiChoiceAnswers) {
+		        		        				assessment[k][3] +=" • "+ item.text() + " \n";
+		        		        				System.out.println(item.text() + "\n");
+		        		        				if(assessment[k][2].equals("multichoice") ) {
+		        		        					System.out.println(assessment[k][1] + "is at " + item.text().split("\\.")[0] );
+		        		        					if(doc.getElementsByClass("rightanswer").text().contains("answers")) {
+		        		        						if(assessment[k][1].contains(item.text().split("\\.")[1])) {
+				        		        					assessment[k][4] += item.text().split("\\.")[0] + " ; ";
+				        		        				}
+		        		        					} else {
+		        		        						if(item.text().split("\\.")[1].contains(assessment[k][1])) {
+				        		        					assessment[k][4] += item.text().split("\\.")[0] + " ; ";
+				        		        				}
+		        		        					}
+		        		        				}
+		        		        			}
+		        		        		}
+			        		        		
+			        		        }
+			        		        JSONArray Questions = new JSONArray();
+			        		        JSONArray Answers = new JSONArray();
+			        		        JSONArray Possibilities = new JSONArray();
+			        		        JSONArray QuestionType = new JSONArray();
+			        		        JSONArray QuestionPoints = new JSONArray();
+			        		        JSONArray Feedback = new JSONArray();
+			        		        int maxMark = 0;
+			        		        for(int k = 0 ; k < assessment.length ; k++) {
+			        		        	Questions.add(assessment[k][0]);
+			        		        	if(assessment[k][2].equals("multichoice")) {
+			        		        		Answers.add(assessment[k][4]);
+			        		        	} else Answers.add(assessment[k][1]);
+			        		        	QuestionPoints.add(assessment[k][5]);
+			        		        	Possibilities.add(assessment[k][3]);
+			        		        	QuestionType.add(assessment[k][2]);
+			        		        	maxMark += Double.parseDouble(assessment[k][5]); 
+			        		        	Feedback.add(assessment[k][6]);
+			        		        }
+			        		        JSONObject currAssessmentContent = new JSONObject();
+			        		        currAssessmentContent.put("QuestionPoints", QuestionPoints);
+			        		        currAssessmentContent.put("Questions", Questions);
+			        		        currAssessmentContent.put("Answers", Answers);
+			        		        currAssessmentContent.put("Possibilities", Possibilities);
+			        		        currAssessmentContent.put("QuestionType", QuestionType);
+			        		        currAssessmentContent.put("currentQuestion" , 0);
+			        		        currAssessmentContent.put("currentWrongQuestions" ,"");
+			        		        currAssessmentContent.put("currentMark", 0);
+			        		        currAssessmentContent.put("maxMark", maxMark);
+			        		        currAssessmentContent.put("Feedback", Feedback);
+			        		        currAssessmentContent.put("quitIntent", triggeredBody.getAsString("quitIntent"));
+			        		        this.currentAssessment.put(channel, currAssessmentContent);
+			        		        JSONObject response = new JSONObject();
+			        		        response.put("text", "Wir starten jetzt das Moodle Quiz :) \n " + assessment[0][0] + assessment[0][3]);
+			        		        response.put("closeContext" , "false");
+			        		        this.score.put(channel, 0);
+			        		        assessmentStarted.put(channel,"true");
+			        		        return Response.ok().entity(response).build();
+			        			} else {
+			        				
+			        				if(topicName.toLowerCase().contains(triggeredBody.getAsString("msg").toLowerCase())){
+			        					similarNames +=" • "+ topicCount + ". " + topicName +"\n";
+			        					similarTopicNames.add(topicName);
+			        				}
+			        				topicCount++;
+			        			}
+			        		}
+			        	}
+			        	
+			        	// here error if number is not there or the user wants to stop ? 
+			        }
+				}
+				if(!similarNames.equals("")) {
+					// not the most efficient way, but at least readable
+					System.out.println(similarTopicNames.size());
+					if(similarTopicNames.size() == 1) {
+						System.out.println("AA");
+						triggeredBody.put("msg", similarTopicNames.get(0));
+						return moodleQuiz(triggeredBody.toString());
+					}
+					JSONObject error = new JSONObject();
+					error.put("text", "Mehrere Quizze entsprechen deiner Antwort, welche von diesen möchtest du denn anfangen?\n" + similarNames);
+					error.put("closeContext" , "false");
+					return Response.ok().entity(error).build();
+				}	
+				JSONObject error = new JSONObject();
+				error.put("text", "Etwas ist schief gelaufe, versuche zu einem späteren Zeitpunkt erneut...");
+				this.topicsProposed.remove(channel);
+				return Response.ok().entity(error).build();
+			}	
+		} else {
+			System.out.println("Why doesnt this work");
+			return Response.ok().entity(continueJSONAssessment(channel, triggeredBody.getAsString("intent"), triggeredBody, "moodleAssessmentDE")).build();
+		}  
+	}    
+    
     
     
     @POST
