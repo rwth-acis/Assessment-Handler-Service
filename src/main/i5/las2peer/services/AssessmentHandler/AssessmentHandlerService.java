@@ -579,7 +579,7 @@ public class AssessmentHandlerService extends RESTService {
 	        					} else answer += "Deine Antwort war teilweise richtig, du hast " + numberOfCorrectAnswers + " richtige Antwort(en) und " + (userAnswers.length-numberOfCorrectAnswers) + " falsche\n";
 	        					this.incrementMark(channel, splitMark*numberOfCorrectAnswers);
 	        				} else if(userAnswers.length == numberOfCorrectAnswers) {
-	        					answer += "Deine Antwort war teilweise richtig, du hast " + numberOfCorrectAnswers + " richtige Antwort(en)";
+	        					answer += "Deine Antwort war teilweise richtig, du hast " + numberOfCorrectAnswers + " richtige Antwort(en)\n";
 	        					this.incrementMark(channel, numberOfCorrectAnswers*splitMark);
 	        				} else {
 	        					answer += "Du hast mehr Punkte bekommen als vorgegeben?!\n";
@@ -1358,7 +1358,7 @@ public class AssessmentHandlerService extends RESTService {
 					if(similarTopicNames.size() == 1) {
 						System.out.println("AA");
 						triggeredBody.put("msg", similarTopicNames.get(0));
-						return moodleQuiz(triggeredBody.toString());
+						return moodleQuizDe(triggeredBody.toString());
 					}
 					JSONObject error = new JSONObject();
 					error.put("text", "Mehrere Quizze entsprechen deiner Antwort, welche von diesen möchtest du denn anfangen?\n" + similarNames);
