@@ -112,7 +112,7 @@ public class AssessmentHandlerService extends RESTService {
 			value = { @ApiResponse(
 					code = HttpURLConnection.HTTP_OK,
 					message = "REPLACE THIS WITH YOUR OK MESSAGE") })
-	public Response nluAssessment(String body) {
+	public Response assessment(String body) {
 		JSONParser p = new JSONParser(JSONParser.MODE_PERMISSIVE);
 		try {
 			JSONObject bodyJson = (JSONObject) p.parse(body);		
@@ -138,9 +138,7 @@ public class AssessmentHandlerService extends RESTService {
 						System.out.println(content);
 						 contentJson = (JSONObject) p.parse(content);
 						if(contentJson.getAsString("topic").toLowerCase().equals(bodyJson.getAsString("topic").toLowerCase())){
-						//	setUpAssessment(contentJson, channel);
 							setUpNluAssessment(contentJson, channel, bodyJson.getAsString("quitIntent"), bodyJson.getAsString("helpIntent"));
-						//	response.put("text", "We will now start the assessment on "+ bodyJson.getAsString("topic") + "\n" +this.currAssessment.get(channel)[0][1]);
 							response.put("text", "We will now start the assessment on "+ bodyJson.getAsString("topic") + "\n" +((JSONArray) this.currentAssessment.get(channel).get("Questions")).get(0));
 							
 							response.put("closeContext", "false");
@@ -245,68 +243,219 @@ public class AssessmentHandlerService extends RESTService {
   		
 	}
 	
-/*    private JSONObject continueAssessment(String channel, String intent, JSONObject triggeredBody, String assessmentType){
-    	JSONObject response = new JSONObject();
-    	String answer = "";
-    	response.put("closeContext", "false");
-        System.out.println(this.currQuestion.get(channel));
-        System.out.println(this.currAssessment.get(channel)[this.currQuestion.get(channel)][2]);
-        if(assessmentType == "NLUAssessment") {
-	        if(intent.equals(quitIntent)) {
-	        	answer += "Assessment is over \n" + "You got " + this.score.get(channel) + "/" + this.currAssessment.get(channel).length + "Questions right! \n You got following Questions wrong: \n " + this.currCorrectQuestions.get(channel);
-	            this.assessmentStarted.put(channel, null);
-	            response.put("closeContext", "true");
-	        } else { 
-		        if(intent.equals(this.currAssessment.get(channel)[this.currQuestion.get(channel)][2])){
-		            answer += "Correct Answer! \n";
-		            this.score.put(channel, this.score.get(channel) + 1 );
-		        } else {
-		        	answer += "Wrong answer :/ \n";
-		        	this.currCorrectQuestions.put(channel, this.currCorrectQuestions.get(channel) + this.currAssessment.get(channel)[this.currQuestion.get(channel)][1] + "\n");
-		        }
-		        this.currQuestion.put(channel,this.currQuestion.get(channel)+1);
-		        if(this.currQuestion.get(channel)==this.currAssessment.get(channel).length){
-		            answer += "Assessment is over \n" + "You got " + this.score.get(channel) + "/" + this.currAssessment.get(channel).length + "Questions right! \n You got following Questions wrong: \n " + this.currCorrectQuestions.get(channel);
-		            this.assessmentStarted.put(channel, null);
-		            response.put("closeContext", "true");
-		        } else {
-		            answer += this.currAssessment.get(channel)[this.currQuestion.get(channel)][1];        
-		        }
-	        }
-	        
-        } else if(assessmentType == "moodleAssessment") {
-	        if(intent.equals(quitIntent)) {
-	        	answer += "Assessment is over \n" + "You got " + this.score.get(channel) + "/" + this.currAssessment.get(channel).length + "Questions right! \n You got following Questions wrong: \n " + this.currCorrectQuestions.get(channel);
-	            this.assessmentStarted.put(channel, null);
-	            response.put("closeContext", "true");
-	        } else { 
-	        	String msg = triggeredBody.getAsString("msg");
-	        	// differ between true false / multiple answers, one answer 
-	        	// for multiple choice split with "," to have all the answers
-	        	System.out.println(this.currAssessment.get(channel)[this.currQuestion.get(channel)][1] + "  " + msg);
-		        if(this.currAssessment.get(channel)[this.currQuestion.get(channel)][1].toLowerCase().contains(msg.toLowerCase())){
-		            answer += "Correct Answer! \n";
-		            this.score.put(channel, this.score.get(channel) + 1 );
-		        } else {
-		        	answer += "Wrong answer :/ \n";
-		        	this.currCorrectQuestions.put(channel, this.currCorrectQuestions.get(channel) + this.currAssessment.get(channel)[this.currQuestion.get(channel)][0]  + "\n");
-		        }
-		        this.currQuestion.put(channel,this.currQuestion.get(channel)+1);
-		        if(this.currQuestion.get(channel)==this.currAssessment.get(channel).length){
-		            answer += "Assessment is over \n" + "You got " + this.score.get(channel) + "/" + this.currAssessment.get(channel).length + "Questions right! \n You got following Questions wrong: \n " + this.currCorrectQuestions.get(channel);
-		            this.assessmentStarted.put(channel, null);
-		            response.put("closeContext", "true");
-		        } else {
-		            answer += this.currAssessment.get(channel)[this.currQuestion.get(channel)][0] + this.currAssessment.get(channel)[this.currQuestion.get(channel)][3];        
-		        }
-	        }
-        } else {
-        	System.out.println("Assessment type: "+ assessmentType + " not known");
-        }
-        response.put("text", answer);
-        return response;
-    }*/
-    
+	
+	
+	@POST
+	@Path("/nluAssessment")
+	@Consumes(MediaType.TEXT_PLAIN)
+	@Produces(MediaType.APPLICATION_JSON)
+	@ApiOperation(
+			value = "REPLACE THIS WITH AN APPROPRIATE FUNCTION NAME",
+			notes = "REPLACE THIS WITH YOUR NOTES TO THE FUNCTION")
+	@ApiResponses(
+			value = { @ApiResponse(
+					code = HttpURLConnection.HTTP_OK,
+					message = "REPLACE THIS WITH YOUR OK MESSAGE") })
+	public Response nluAssessment(String body) {
+		JSONParser p = new JSONParser(JSONParser.MODE_PERMISSIVE);
+		try {
+			JSONObject bodyJson = (JSONObject) p.parse(body);		
+			System.out.println(bodyJson);
+			JSONObject response = new JSONObject();
+			String channel = bodyJson.getAsString("channel");
+			if(this.assessmentStarted.get(channel) == null){
+				// function needs assessmentContent parameter
+				if(!(bodyJson.get("assessmentContent") instanceof JSONArray)) {
+					JSONArray assessmentContent = new JSONArray();
+					assessmentContent.add(bodyJson.get("assessmentContent"));
+					bodyJson.put("assessmentContent", assessmentContent);
+				}
+				JSONArray jsonAssessment = (JSONArray) bodyJson.get("assessmentContent");
+				ArrayList<String> assessment = new ArrayList<String>();
+				if(jsonAssessment != null) {
+					int len = jsonAssessment.size();
+					for(int i=0; i<len ; i++){
+						assessment.add(jsonAssessment.get(i).toString());
+					}
+					JSONObject contentJson;
+					if(this.topicsProposed.get(channel) == null) {
+						String topicNames="";
+						int topicNumber = 1;
+						for(String content : assessment) {
+							 contentJson = (JSONObject) p.parse(content);
+							 topicNames += " • " + topicNumber + ". " + contentJson.getAsString("topic") + "\n";
+							 topicNumber++;
+						}
+						if(!topicNames.equals("")) {
+							response.put("text", "Select a quiz by responding with the corresponding number: \n" + topicNames);
+							response.put("closeContext", false);
+							this.topicsProposed.put(channel, true);
+							return Response.ok().entity(response).build();
+						}
+						JSONObject error = new JSONObject();
+						error.put("text", "There are currently no topics available, try again later!");
+						error.put("closeContext", "true");
+						return Response.ok().entity(error).build();
+					} else {
+						
+						String chosenTopicNumber = bodyJson.getAsString("msg").split("\\.")[0];
+						String similarNames = "";
+				        ArrayList<String> similarTopicNames = new ArrayList<String>();
+				        String smiliarNames = "";
+						int topicCount = 1;
+						for(String content : assessment) {
+							 contentJson = (JSONObject) p.parse(content);
+							if(contentJson.getAsString("topic").toLowerCase().equals(bodyJson.getAsString("msg").toLowerCase()) || chosenTopicNumber.equals(String.valueOf(topicCount))){
+								setUpNluAssessment(contentJson, channel, bodyJson.getAsString("quitIntent"), bodyJson.getAsString("helpIntent"));
+								this.topicsProposed.remove(channel);
+								this.assessmentStarted.put(channel, "true");
+								response.put("text", "We will now start the nlu assessment on "+ contentJson.getAsString("topic") + " :)!\n" +((JSONArray) this.currentAssessment.get(channel).get("Questions")).get(0));							
+								response.put("closeContext", "false");
+								
+								return Response.ok().entity(response).build(); 
+							} else if(contentJson.getAsString("topic").toLowerCase().contains(bodyJson.getAsString("msg").toLowerCase())) {
+								similarTopicNames.add(contentJson.getAsString("topic"));
+								similarNames += " • " + topicCount + ". " + contentJson.getAsString("topic") + "\n";
+							}
+							topicCount++;
+						}
+						if(similarTopicNames.size() == 1) {
+							bodyJson.put("msg", similarTopicNames.get(0));
+							return nluAssessment(bodyJson.toString());
+						} else if(similarTopicNames.size() > 1) {
+							response.put("text", "Multiple nlu assessments are similar to the name you wrote, which one of these do you want to start?\n" + similarNames);							
+							response.put("closeContext", "false");
+							return Response.ok().entity(response).build();
+						}
+						JSONObject error = new JSONObject();
+						error.put("text", "Topic with name " + bodyJson.getAsString("topic")+ " not found");
+						error.put("closeContext", "true");
+						return Response.ok().entity(error).build();
+					}
+				}
+				
+
+			} else {
+				System.out.println(bodyJson.getAsString("intent"));
+				return Response.ok().entity(continueJSONAssessment(channel, bodyJson.getAsString("intent"), bodyJson, "NLUAssessment")).build();
+			}		
+			
+		} catch (ParseException e) {
+			e.printStackTrace();
+		}	
+		JSONObject error = new JSONObject();
+		error.put("text", "Something went wrong");
+		error.put("closeContext", "true");
+		return Response.ok().entity(error).build();
+
+	}	
+	
+	
+	@POST
+	@Path("/nluAssessmentDE")
+	@Consumes(MediaType.TEXT_PLAIN)
+	@Produces(MediaType.APPLICATION_JSON)
+	@ApiOperation(
+			value = "REPLACE THIS WITH AN APPROPRIATE FUNCTION NAME",
+			notes = "REPLACE THIS WITH YOUR NOTES TO THE FUNCTION")
+	@ApiResponses(
+			value = { @ApiResponse(
+					code = HttpURLConnection.HTTP_OK,
+					message = "REPLACE THIS WITH YOUR OK MESSAGE") })
+	public Response nluAssessmentDE(String body) {
+		JSONParser p = new JSONParser(JSONParser.MODE_PERMISSIVE);
+		try {
+			JSONObject bodyJson = (JSONObject) p.parse(body);		
+			System.out.println(bodyJson);
+			JSONObject response = new JSONObject();
+			String channel = bodyJson.getAsString("channel");
+			if(this.assessmentStarted.get(channel) == null){
+				// function needs assessmentContent parameter
+				if(!(bodyJson.get("assessmentContent") instanceof JSONArray)) {
+					JSONArray assessmentContent = new JSONArray();
+					assessmentContent.add(bodyJson.get("assessmentContent"));
+					bodyJson.put("assessmentContent", assessmentContent);
+				}
+				JSONArray jsonAssessment = (JSONArray) bodyJson.get("assessmentContent");
+				ArrayList<String> assessment = new ArrayList<String>();
+				if(jsonAssessment != null) {
+					int len = jsonAssessment.size();
+					for(int i=0; i<len ; i++){
+						assessment.add(jsonAssessment.get(i).toString());
+					}
+					JSONObject contentJson;
+					if(this.topicsProposed.get(channel) == null) {
+						String topicNames="";
+						int topicNumber = 1;
+						for(String content : assessment) {
+							 contentJson = (JSONObject) p.parse(content);
+							 topicNames += " • " + topicNumber + ". " + contentJson.getAsString("topic") + "\n";
+							 topicNumber++;
+						}
+						if(!topicNames.equals("")) {
+							response.put("text", "Wähle ein Quiz indem du mit der entsprechenden Nummer oder dem entsprechenden Name antwortest:\\n" + topicNames);
+							response.put("closeContext", false);
+							this.topicsProposed.put(channel, true);
+							return Response.ok().entity(response).build();
+						}
+						JSONObject error = new JSONObject();
+						error.put("text", "Derzeit sind keine Themen verfügbar, versuche zu einem späteren Zeitpunkt wieder!");
+						error.put("closeContext", "true");
+						return Response.ok().entity(error).build();
+					} else {
+						
+						String chosenTopicNumber = bodyJson.getAsString("msg").split("\\.")[0];
+						String similarNames = "";
+				        ArrayList<String> similarTopicNames = new ArrayList<String>();
+				        String smiliarNames = "";
+						int topicCount = 1;
+						for(String content : assessment) {
+							 contentJson = (JSONObject) p.parse(content);
+							if(contentJson.getAsString("topic").toLowerCase().equals(bodyJson.getAsString("msg").toLowerCase()) || chosenTopicNumber.equals(String.valueOf(topicCount))){
+								setUpNluAssessment(contentJson, channel, bodyJson.getAsString("quitIntent"), bodyJson.getAsString("helpIntent"));
+								this.topicsProposed.remove(channel);
+								this.assessmentStarted.put(channel, "true");
+								response.put("text", "Wir starten jetzt das Nlu Assessment über "+ contentJson.getAsString("topic") + " :)!\n" +((JSONArray) this.currentAssessment.get(channel).get("Questions")).get(0));							
+								response.put("closeContext", "false");
+								
+								return Response.ok().entity(response).build(); 
+							} else if(contentJson.getAsString("topic").toLowerCase().contains(bodyJson.getAsString("msg").toLowerCase())) {
+								similarTopicNames.add(contentJson.getAsString("topic"));
+								similarNames += " • " + topicCount + ". " + contentJson.getAsString("topic") + "\n";
+							}
+							topicCount++;
+						}
+						if(similarTopicNames.size() == 1) {
+							bodyJson.put("msg", similarTopicNames.get(0));
+							return nluAssessment(bodyJson.toString());
+						} else if(similarTopicNames.size() > 1) {
+							response.put("text", "Mehrere Nlu Assessments entsprechen deiner Antwort, welche von diesen möchtest du denn anfangen?\n" + similarNames);							
+							response.put("closeContext", "false");
+							return Response.ok().entity(response).build();
+						}
+						JSONObject error = new JSONObject();
+						error.put("text", "Topic with name " + bodyJson.getAsString("topic")+ " not found");
+						error.put("closeContext", "true");
+						return Response.ok().entity(error).build();
+					}
+				}
+				
+
+			} else {
+				System.out.println(bodyJson.getAsString("intent"));
+				return Response.ok().entity(continueJSONAssessment(channel, bodyJson.getAsString("intent"), bodyJson, "NLUAssessmentDe")).build();
+			}		
+			
+		} catch (ParseException e) {
+			e.printStackTrace();
+		}	
+		JSONObject error = new JSONObject();
+		error.put("text", "Something went wrong");
+		error.put("closeContext", "true");
+		return Response.ok().entity(error).build();
+
+	}
+	
     private JSONObject continueJSONAssessment(String channel, String intent, JSONObject triggeredBody, String assessmentType){
     	JSONObject response = new JSONObject();
     	String answer = "";
@@ -315,7 +464,7 @@ public class AssessmentHandlerService extends RESTService {
         if(assessmentType.equals("NLUAssessment")) {
 	        if(intent.equals(this.getQuitIntent(channel))){
 	        	// here should not be the entire size but the current number of questions .. 
-	        	answer += "Assessment is over \n" + "You got " + this.getMarks(channel) + "/" + this.getCurrentQuestionNumber(channel) + "Questions right! \n"; 
+	        	answer += "Assessment is over \n" + "You got " + this.getMarks(channel) + "/" + this.getCurrentQuestionNumber(channel) + " Questions right! \n"; 
 	            if(this.getMarks(channel).equals(this.getCurrentQuestionNumber(channel))) {
 	            	answer += "You got no questions wrong!";
 	            } else answer +=  "You got following Questions wrong: \n" + this.getWrongQuestions(channel);
@@ -344,7 +493,39 @@ public class AssessmentHandlerService extends RESTService {
 		        }
 	        }
 	        
-        } else if(assessmentType == "moodleAssessment") {
+        } else if(assessmentType.equals("NLUAssessmentDe")) {
+	        if(intent.equals(this.getQuitIntent(channel))){
+	        	// here should not be the entire size but the current number of questions .. 
+	        	answer += "Das Assessment ist fertig \n" + "Du hast " + this.getMarks(channel) + "/" + this.getCurrentQuestionNumber(channel) + " Fragen richtig beantwortet! \n"; 
+	            if(this.getMarks(channel).equals(this.getCurrentQuestionNumber(channel))) {
+	            	answer += "Du hast keine falsche Antworten!";
+	            } else answer +=  "Du hast folgende Fragen falsch beantwortet: \n" + this.getWrongQuestions(channel);
+	        	this.assessmentStarted.put(channel, null);
+	            response.put("closeContext", "true");
+	        } else if(intent.equals(this.getHelpIntent(channel))){
+	        	answer+= ((JSONArray)this.currentAssessment.get(channel).get("Hints")).get(this.getCurrentQuestionNumber(channel)).toString() + "\n";
+	        	response.put("closeContext", "false");
+	        } else { 
+		        if(intent.equals(((JSONArray)this.currentAssessment.get(channel).get("Intents")).get(currentQuestionNumber))){
+		            answer += "Richtige Antwort! \n";
+		            this.incrementMark(channel, 1);
+		        } else {
+		        	answer += "Falsche Antwort :/ \n";
+		        	this.addWrongQuestion(channel);
+		        }
+		        this.incrementCounter(channel);
+		        if(this.getCurrentQuestionNumber(channel) == getAssessmentSize(channel)){
+		        	if(this.getMarks(channel).equals(this.getAssessmentSize(channel))) {
+		        		answer += "Das Assessment ist fertig \n" + "Du hast " + this.getMarks(channel) + "/" + this.getAssessmentSize(channel) + "Fragen richtig beantwortet! \n Du hast keine falsche Antworten! \n " + this.getWrongQuestions(channel);
+		        	} else answer += "Das Assessment ist fertig \n" + "Du hast " + this.getMarks(channel) + "/" + this.getAssessmentSize(channel) + "Fragen richtig beantwortet!  \n Du hast keine falsche Antworten: \n " + this.getWrongQuestions(channel);
+		            this.assessmentStarted.put(channel, null);
+		            response.put("closeContext", "true");
+		        } else {
+		            answer += ((JSONArray)this.currentAssessment.get(channel).get("Questions")).get(this.getCurrentQuestionNumber(channel));        
+		        }
+	        }
+	        
+        } else if(assessmentType.equals("moodleAssessment")) {
 	        if(intent.equals(this.getQuitIntent(channel))) {
 	        	answer += "Assessment is over \n" + "Your final mark is *" + this.getMarks(channel) + "/" + (this.getTotalMarksUntilCurrentQuestion(channel) - this.getMarkForCurrentQuestion(channel)) + "* \n";  	
 	            if(this.getMarks(channel).equals((this.getTotalMarksUntilCurrentQuestion(channel) - this.getMarkForCurrentQuestion(channel)))) {
@@ -477,7 +658,7 @@ public class AssessmentHandlerService extends RESTService {
 		            answer += ((JSONArray)this.currentAssessment.get(channel).get("Questions")).get(this.getCurrentQuestionNumber(channel)).toString() + ((JSONArray)this.currentAssessment.get(channel).get("Possibilities")).get(this.getCurrentQuestionNumber(channel)).toString() ;        
 		        }
 	        }
-        } else if(assessmentType == "moodleAssessmentDE") {
+        } else if(assessmentType == "moodleAssessmentDe") {
 	        if(intent.equals(this.getQuitIntent(channel))) {
 	        	answer += "Assessment ist fertig \n" + "Dein Endresultat ist *" + this.getMarks(channel) + "/" + this.getTotalMarksUntilCurrentQuestion(channel) + "* \n";  	
 	            if(this.getMarks(channel).equals(this.getTotalMarksUntilCurrentQuestion(channel))) {
@@ -1372,7 +1553,7 @@ public class AssessmentHandlerService extends RESTService {
 			}	
 		} else {
 			System.out.println("Why doesnt this work");
-			return Response.ok().entity(continueJSONAssessment(channel, triggeredBody.getAsString("intent"), triggeredBody, "moodleAssessmentDE")).build();
+			return Response.ok().entity(continueJSONAssessment(channel, triggeredBody.getAsString("intent"), triggeredBody, "moodleAssessmentDe")).build();
 		}  
 	}    
     
