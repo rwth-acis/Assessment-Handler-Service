@@ -16,6 +16,7 @@ import javax.ws.rs.core.Response;
 import org.apache.commons.lang3.StringUtils;
 
 import i5.las2peer.api.Context;
+import i5.las2peer.api.logging.MonitoringEvent;
 import i5.las2peer.api.security.UserAgent;
 import i5.las2peer.connectors.webConnector.client.ClientResponse;
 import i5.las2peer.connectors.webConnector.client.MiniClient;
@@ -1456,7 +1457,10 @@ public class AssessmentHandlerService extends RESTService {
 		        		        			}
 		        		        			answers += doc.getElementsByClass("rightanswer").text().split("The correct answer is")[1] +"\n";
 		        		        			if(assessment[k][2].equals("truefalse")) {
-		        		        				assessment[k][1] = doc.getElementsByClass("rightanswer").text().split("The correct answer is")[1];
+		        		        				if(doc.getElementsByClass("rightanswer").text().split("The correct answer is")[1].toLowerCase().contains("true")) {
+		        		        					assessment[k][1] = "wahr";
+		        		        				} else assessment[k][1] = "falsch";
+		        		        				
 		        		        			} else assessment[k][1] = doc.getElementsByClass("rightanswer").text().split("The correct answer is: ")[1];
 		        		        			
 		        		        		}
@@ -1464,9 +1468,13 @@ public class AssessmentHandlerService extends RESTService {
 		        		        			// check if answers or answer here ? 
 		        		        			Elements multiChoiceAnswers = doc.getElementsByClass("ml-1");
 		        		        			for(Element item : multiChoiceAnswers) {
-		        		        				assessment[k][3] +=" • "+ item.text() + " \n";
+		        		        				if(assessment[k][2].equals("truefalse")) {
+		        		        					if(item.text().toLowerCase().contains("true")) {
+		        		        						assessment[k][3] +=" • "+ "Wahr" + " \n";
+		        		        					} else assessment[k][3] +=" • "+ "Falsch" + " \n";
+		        		        				} else assessment[k][3] +=" • "+ item.text() + " \n";
 		        		        				System.out.println(item.text() + "\n");
-		        		        				if(assessment[k][2].equals("multichoice") ) {
+		        		        				if(assessment[k][2].equals("multichoice")) {
 		        		        					System.out.println(assessment[k][1] + "is at " + item.text().split("\\.")[0] );
 		        		        					if(doc.getElementsByClass("rightanswer").text().contains("answers")) {
 		        		        						if(assessment[k][1].contains(item.text().split("\\.")[1])) {
@@ -1637,6 +1645,42 @@ public class AssessmentHandlerService extends RESTService {
     	c.put("topic","Ass2");
     	a.put("topic", "Ass1");
     	b.put("content",a);
+    	// of course add check for errors with try catch..
+    	JSONObject actor = new JSONObject();
+    	JSONObject verb = new JSONObject();
+    	JSONObject object = new JSONObject();
+    	JSONObject result = new JSONObject();
+    	actor.put("objectType", "Agent");
+    	actor.put("mail", "alice@example.com");
+    	verb.put("id", "https://w3id.org/xapi/dod-isd/verbs/completed");
+    	JSONObject display = new JSONObject();
+    	display.put("en-US", "completed");
+    	verb.put("display", display);
+    	
+    	result.put("completion", true);
+    	result.put("response", "feedback");
+    	JSONObject score = new JSONObject();
+    	score.put("min",0);
+    	score.put("max",10);
+    	score.put("raw","grade/10");
+    	double scaled = 0.5;
+    	score.put("scaled", scaled);
+    	result.put("score",score);
+    	
+    	object.put("id", "put moodle url for this quiz or quiz id");
+    	JSONObject definition = new JSONObject();
+    	JSONObject name = new JSONObject();
+    	name.put("en-US", "quizName");
+    	definition.put("name" , name);
+    	object.put("definition", definition);
+    	JSONObject statement = new JSONObject();
+    	statement.put("actor", actor);
+    	statement.put("verb", verb);
+    	statement.put("object", object);
+    	statement.put("result", result);
+    	
+    	Context.get().monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_2,statement.toString());
+
     	
     	if(b.containsKey("content")) {
     		JSONArray content = new JSONArray();
