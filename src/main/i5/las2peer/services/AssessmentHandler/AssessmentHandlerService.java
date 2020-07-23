@@ -3,6 +3,7 @@ package i5.las2peer.services.AssessmentHandler;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashMap;
 
 import javax.ws.rs.GET;
@@ -532,7 +533,26 @@ public class AssessmentHandlerService extends RESTService {
 	            if(this.getMarks(channel).equals((this.getTotalMarksUntilCurrentQuestion(channel) - this.getMarkForCurrentQuestion(channel)))) {
 	            	answer += "You got no questions wrong!";
 	            } else answer += "You got following Questions wrong: \n " + this.getWrongQuestions(channel);
-	        	this.assessmentStarted.put(channel, null);
+	        	
+	            this.assessmentStarted.put(channel, null);
+	        	
+	            JSONObject result = new JSONObject();
+	            result.put("completion", true);
+	            JSONObject score = new JSONObject();
+	            score.put("raw",  Double.parseDouble(this.getMarks(channel)));
+	            score.put("scaled", Double.parseDouble(this.getMarks(channel))/((this.getTotalMarksUntilCurrentQuestion(channel) - this.getMarkForCurrentQuestion(channel))));
+	            score.put("min",  0);
+	            score.put("max", this.getTotalMarksUntilCurrentQuestion(channel) - this.getMarkForCurrentQuestion(channel));
+	            result.put("score", score);
+	            
+	            JSONObject xAPI = new JSONObject();
+	            xAPI.put("result", result);
+	     //       xAPI.put("timestamp",java.time.LocalDateTime.now() );
+	            xAPI.put("actor", this.currentAssessment.get(channel).get("actor"));
+	            xAPI.put("object", this.currentAssessment.get(channel).get("object"));
+	            xAPI.put("verb", this.currentAssessment.get(channel).get("verb"));
+	        	
+	            Context.get().monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_3,xAPI.toString() + "*" + triggeredBody.getAsString("email"));
 	            response.put("closeContext", "true");
 	        } else { 
 	        	String msg = triggeredBody.getAsString("msg");
@@ -654,6 +674,24 @@ public class AssessmentHandlerService extends RESTService {
 		        		answer += "Assessment is over \n" + "Your final mark is *" + this.getMarks(channel) + "/" + this.getMaxMarks(channel) + "* \n You got no Questions wrong! \n " + this.getWrongQuestions(channel);
 		        	} else answer += "Assessment is over \n" + "Your final mark is *" + this.getMarks(channel) + "/" + this.getMaxMarks(channel) + "*  \n You got following Questions wrong: \n " + this.getWrongQuestions(channel);
 		            this.assessmentStarted.put(channel, null);
+		            JSONObject result = new JSONObject();
+		            result.put("completion", true);
+		            JSONObject score = new JSONObject();
+		            score.put("raw",  Double.parseDouble(this.getMarks(channel)));
+		            score.put("scaled", Double.parseDouble(this.getMarks(channel))/Double.parseDouble(this.getMaxMarks(channel)));
+		            score.put("min",  0);
+		            score.put("max", Double.parseDouble(this.getMaxMarks(channel)));
+		            result.put("score", score);
+		            
+		            JSONObject xAPI = new JSONObject();
+		            xAPI.put("result", result);
+		 //           xAPI.put("timestamp",java.time.LocalDateTime.now() );
+		            xAPI.put("actor", this.currentAssessment.get(channel).get("actor"));
+		            xAPI.put("object", this.currentAssessment.get(channel).get("object"));
+		            xAPI.put("verb", this.currentAssessment.get(channel).get("verb"));
+		        	
+		            Context.get().monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_3,xAPI.toString() + "*" + triggeredBody.getAsString("email"));
+		            
 		            response.put("closeContext", "true");
 		        } else {
 		            answer += ((JSONArray)this.currentAssessment.get(channel).get("Questions")).get(this.getCurrentQuestionNumber(channel)).toString() + ((JSONArray)this.currentAssessment.get(channel).get("Possibilities")).get(this.getCurrentQuestionNumber(channel)).toString() ;        
@@ -666,6 +704,25 @@ public class AssessmentHandlerService extends RESTService {
 	            	answer += "Du hast keine falsche Antworten!";
 	            } else answer += "Du hast folgende Fragen falsch beantwortet: \n " + this.getWrongQuestions(channel);
 	        	this.assessmentStarted.put(channel, null);
+	        	
+	            JSONObject result = new JSONObject();
+	            result.put("completion", true);
+	            JSONObject score = new JSONObject();
+	            score.put("raw",  Double.parseDouble(this.getMarks(channel)));
+	            score.put("scaled", Double.parseDouble(this.getMarks(channel))/((this.getTotalMarksUntilCurrentQuestion(channel) - this.getMarkForCurrentQuestion(channel))));
+	            score.put("min",  0);
+	            score.put("max", this.getTotalMarksUntilCurrentQuestion(channel) - this.getMarkForCurrentQuestion(channel));
+	            result.put("score", score);
+	            
+	            JSONObject xAPI = new JSONObject();
+	            xAPI.put("result", result);
+	     //       xAPI.put("timestamp",java.time.LocalDateTime.now() );
+	            xAPI.put("actor", this.currentAssessment.get(channel).get("actor"));
+	            xAPI.put("object", this.currentAssessment.get(channel).get("object"));
+	            xAPI.put("verb", this.currentAssessment.get(channel).get("verb"));
+	        	
+	            Context.get().monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_3,xAPI.toString() + "*" + triggeredBody.getAsString("email"));
+	            
 	            response.put("closeContext", "true");
 	        } else { 
 	        	String msg = triggeredBody.getAsString("msg");
@@ -787,6 +844,26 @@ public class AssessmentHandlerService extends RESTService {
 		        		answer += "Assessment ist fertig \n" + "Dein Endresultat ist *" + this.getMarks(channel) + "/" + this.getMaxMarks(channel) + "* \n Du hast keine falsche Fragen \n " + this.getWrongQuestions(channel);
 		        	} else answer += "Assessment ist fertig \n" + "Dein Endresultat ist *" + this.getMarks(channel) + "/" + this.getMaxMarks(channel) + "*  \n Du hast folgende Fragen falsch beantwortet: \n " + this.getWrongQuestions(channel);
 		            this.assessmentStarted.put(channel, null);
+		            
+		            
+		            JSONObject result = new JSONObject();
+		            result.put("completion", true);
+		            JSONObject score = new JSONObject();
+		            score.put("raw",  Double.parseDouble(this.getMarks(channel)));
+		            score.put("scaled", Double.parseDouble(this.getMarks(channel))/Double.parseDouble(this.getMaxMarks(channel)));
+		            score.put("min",  0);
+		            score.put("max", Double.parseDouble(this.getMaxMarks(channel)));
+		            result.put("score", score);
+		            
+		            JSONObject xAPI = new JSONObject();
+		            xAPI.put("result", result);
+		     //       xAPI.put("timestamp",java.time.LocalDateTime.now() );
+		            xAPI.put("actor", this.currentAssessment.get(channel).get("actor"));
+		            xAPI.put("object", this.currentAssessment.get(channel).get("object"));
+		            xAPI.put("verb", this.currentAssessment.get(channel).get("verb"));
+		        	
+		            Context.get().monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_3,xAPI.toString() + "*" + triggeredBody.getAsString("email"));
+		            
 		            response.put("closeContext", "true");
 		        } else {
 		            answer += ((JSONArray)this.currentAssessment.get(channel).get("Questions")).get(this.getCurrentQuestionNumber(channel)).toString() + ((JSONArray)this.currentAssessment.get(channel).get("Possibilities")).get(this.getCurrentQuestionNumber(channel)).toString() ;        
@@ -1266,12 +1343,35 @@ public class AssessmentHandlerService extends RESTService {
 			        		        currAssessmentContent.put("maxMark", maxMark);
 			        		        currAssessmentContent.put("Feedback", Feedback);
 			        		        currAssessmentContent.put("quitIntent", triggeredBody.getAsString("quitIntent"));
+			        		        
+			        		        JSONObject actor =  new JSONObject();
+			        		        actor.put("mbox", "mailto:" + triggeredBody.getAsString("email"));
+			        		        actor.put("objectType", "Agent");
+			        		        JSONObject verb = new JSONObject();
+			        		        JSONObject display = new JSONObject();
+			        		    	display.put("en-US", "completed");
+			        		    	verb.put("display", display);
+			        		    	verb.put("id", "https://w3id.org/xapi/dod-isd/verbs/completed" );
+			        		    	JSONObject object = new JSONObject();
+			        		    	JSONObject definition = new JSONObject();
+			        		    	JSONObject name = new JSONObject();
+			        		    	name.put("en-US", topicName);
+			        		    	definition.put("name" , name);
+			        		    	object.put("definition", definition);
+			        		    	object.put("id", triggeredBody.getAsString("LMSURL") +"/mod/quiz/view.php?id="  + ((JSONObject)((JSONArray)((JSONObject) resi.get(i)).get("modules")).get(j)).getAsString("id"));
+			        		    	object.put("objectType", "Activity");
+			        		    	currAssessmentContent.put("actor", actor);
+			        		    	currAssessmentContent.put("object", object);
+			        		    	currAssessmentContent.put("verb", verb);
+			        		        
+			        		        
 			        		        this.currentAssessment.put(channel, currAssessmentContent);
 			        		        JSONObject response = new JSONObject();
 			        		        response.put("text", "We will now start the moodle quiz :) \n " + assessment[0][0] + assessment[0][3]);
 			        		        response.put("closeContext" , "false");
 			        		        this.score.put(channel, 0);
 			        		        assessmentStarted.put(channel,"true");
+			        		        
 			        		        return Response.ok().entity(response).build();
 			        			} else {
 			        				
@@ -1520,7 +1620,29 @@ public class AssessmentHandlerService extends RESTService {
 			        		        currAssessmentContent.put("maxMark", maxMark);
 			        		        currAssessmentContent.put("Feedback", Feedback);
 			        		        currAssessmentContent.put("quitIntent", triggeredBody.getAsString("quitIntent"));
-			        		        this.currentAssessment.put(channel, currAssessmentContent);
+			        		        
+			        		        JSONObject actor =  new JSONObject();
+			        		        actor.put("mbox", "mailto:" + triggeredBody.getAsString("email"));
+			        		        actor.put("objectType", "Agent");
+			        		        JSONObject verb = new JSONObject();
+			        		        JSONObject display = new JSONObject();
+			        		    	display.put("en-US", "completed");
+			        		    	verb.put("display", display);
+			        		    	verb.put("id", "https://w3id.org/xapi/dod-isd/verbs/completed" );
+			        		    	JSONObject object = new JSONObject();
+			        		    	JSONObject definition = new JSONObject();
+			        		    	JSONObject name = new JSONObject();
+			        		    	name.put("en-US", topicName);
+			        		    	definition.put("name" , name);
+			        		    	object.put("definition", definition);
+			        		    	object.put("id", triggeredBody.getAsString("LMSURL") +"/mod/quiz/view.php?id="  + ((JSONObject)((JSONArray)((JSONObject) resi.get(i)).get("modules")).get(j)).getAsString("id"));
+			        		    	object.put("objectType", "Activity");
+			        		    	currAssessmentContent.put("actor", actor);
+			        		    	currAssessmentContent.put("object", object);
+			        		    	currAssessmentContent.put("verb", verb);
+			        		    	//statement.put("timestamp","2020-07-07T22:08:45Z" );
+			        		        
+			        		    	this.currentAssessment.put(channel, currAssessmentContent);
 			        		        JSONObject response = new JSONObject();
 			        		        response.put("text", "Wir starten jetzt das Moodle Quiz :) \n " + assessment[0][0] + assessment[0][3]);
 			        		        response.put("closeContext" , "false");
@@ -1651,7 +1773,7 @@ public class AssessmentHandlerService extends RESTService {
     	JSONObject object = new JSONObject();
     	JSONObject result = new JSONObject();
     	actor.put("objectType", "Agent");
-    	actor.put("mail", "alice@example.com");
+    	actor.put("mbox", "mailto:alice@example.com");
     	verb.put("id", "https://w3id.org/xapi/dod-isd/verbs/completed");
     	JSONObject display = new JSONObject();
     	display.put("en-US", "completed");
@@ -1662,12 +1784,12 @@ public class AssessmentHandlerService extends RESTService {
     	JSONObject score = new JSONObject();
     	score.put("min",0);
     	score.put("max",10);
-    	score.put("raw","grade/10");
+    	score.put("raw",5);
     	double scaled = 0.5;
     	score.put("scaled", scaled);
     	result.put("score",score);
     	
-    	object.put("id", "put moodle url for this quiz or quiz id");
+    	object.put("id", "https://moodle.tech4comp.dbis.rwth-aachen.de/mod/quiz/view.php?id=44");
     	JSONObject definition = new JSONObject();
     	JSONObject name = new JSONObject();
     	name.put("en-US", "quizName");
@@ -1678,8 +1800,12 @@ public class AssessmentHandlerService extends RESTService {
     	statement.put("verb", verb);
     	statement.put("object", object);
     	statement.put("result", result);
-    	
-    	Context.get().monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_2,statement.toString());
+    	statement.put("timestamp","2020-07-07T22:08:45Z" );
+		String clientKey =  "c414faf567644beb7682da7686f732feb21f233b";
+		String clientSecret = "e4068bd9b8df0d1ce8a0719d78e1d2e4fb55c9c2";
+		String lrsAuth = Base64.getEncoder().encodeToString((clientKey + ":" + clientSecret).getBytes());
+    	System.out.println(lrsAuth);
+    	Context.get().monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_2,statement.toString() + "*BAConrardy");
 
     	
     	if(b.containsKey("content")) {
