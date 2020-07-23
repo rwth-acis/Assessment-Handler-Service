@@ -540,9 +540,11 @@ public class AssessmentHandlerService extends RESTService {
 	            result.put("completion", true);
 	            JSONObject score = new JSONObject();
 	            score.put("raw",  Double.parseDouble(this.getMarks(channel)));
-	            score.put("scaled", Double.parseDouble(this.getMarks(channel))/((this.getTotalMarksUntilCurrentQuestion(channel) - this.getMarkForCurrentQuestion(channel))));
-	            score.put("min",  0);
-	            score.put("max", this.getTotalMarksUntilCurrentQuestion(channel) - this.getMarkForCurrentQuestion(channel));
+	            score.put("min",  0.0);
+	            score.put("max", Double.parseDouble(this.getMaxMarks(channel)));
+	            if(!score.getAsString("max").equals("0.0")) {
+	            	score.put("scaled", Double.parseDouble(this.getMarks(channel))/Double.parseDouble(this.getMaxMarks(channel)));
+	            }
 	            result.put("score", score);
 	            
 	            JSONObject xAPI = new JSONObject();
@@ -678,9 +680,11 @@ public class AssessmentHandlerService extends RESTService {
 		            result.put("completion", true);
 		            JSONObject score = new JSONObject();
 		            score.put("raw",  Double.parseDouble(this.getMarks(channel)));
-		            score.put("scaled", Double.parseDouble(this.getMarks(channel))/Double.parseDouble(this.getMaxMarks(channel)));
-		            score.put("min",  0);
+		            score.put("min",  0.0);
 		            score.put("max", Double.parseDouble(this.getMaxMarks(channel)));
+		            if(!score.getAsString("max").equals("0.0")) {
+		            	score.put("scaled", Double.parseDouble(this.getMarks(channel))/Double.parseDouble(this.getMaxMarks(channel)));
+		            }
 		            result.put("score", score);
 		            
 		            JSONObject xAPI = new JSONObject();
@@ -709,9 +713,11 @@ public class AssessmentHandlerService extends RESTService {
 	            result.put("completion", true);
 	            JSONObject score = new JSONObject();
 	            score.put("raw",  Double.parseDouble(this.getMarks(channel)));
-	            score.put("scaled", Double.parseDouble(this.getMarks(channel))/((this.getTotalMarksUntilCurrentQuestion(channel) - this.getMarkForCurrentQuestion(channel))));
-	            score.put("min",  0);
-	            score.put("max", this.getTotalMarksUntilCurrentQuestion(channel) - this.getMarkForCurrentQuestion(channel));
+	            score.put("min",  0.0);
+	            score.put("max", Double.parseDouble(this.getMaxMarks(channel)));
+	            if(!score.getAsString("max").equals("0.0")) {
+	            	score.put("scaled", Double.parseDouble(this.getMarks(channel))/Double.parseDouble(this.getMaxMarks(channel)));
+	            }
 	            result.put("score", score);
 	            
 	            JSONObject xAPI = new JSONObject();
@@ -850,9 +856,11 @@ public class AssessmentHandlerService extends RESTService {
 		            result.put("completion", true);
 		            JSONObject score = new JSONObject();
 		            score.put("raw",  Double.parseDouble(this.getMarks(channel)));
-		            score.put("scaled", Double.parseDouble(this.getMarks(channel))/Double.parseDouble(this.getMaxMarks(channel)));
-		            score.put("min",  0);
+		            score.put("min",  0.0);
 		            score.put("max", Double.parseDouble(this.getMaxMarks(channel)));
+		            if(!score.getAsString("max").equals("0.0")) {
+		            	score.put("scaled", Double.parseDouble(this.getMarks(channel))/Double.parseDouble(this.getMaxMarks(channel)));
+		            }
 		            result.put("score", score);
 		            
 		            JSONObject xAPI = new JSONObject();
@@ -1154,6 +1162,7 @@ public class AssessmentHandlerService extends RESTService {
 					code = HttpURLConnection.HTTP_OK,
 					message = "REPLACE THIS WITH YOUR OK MESSAGE") })
 	public Response moodleQuiz(String body) throws ParseException {
+    	JSONObject error = new JSONObject();
     	System.out.println(body);
 		JSONParser p = new JSONParser(JSONParser.MODE_PERMISSIVE);
 		JSONObject triggeredBody = (JSONObject) p.parse(body);
@@ -1233,10 +1242,21 @@ public class AssessmentHandlerService extends RESTService {
 			        				}
 			        				this.topicProcessed.put(topicName, true);
 			        				this.attemptStartedOnMoodle = true;	
+			        				// add error here if quiz is already started
+			        				
 			        				result = client.sendRequest("GET", "/webservice/rest/server.php?wstoken=" + wstoken + "&wsfunction=mod_quiz_start_attempt&quizid=" + quizid + "&moodlewsrestformat=json" , "",
 			        						"", MediaType.APPLICATION_JSON, headers);
 			        		        res = (JSONObject) p.parse(result.getResponse());
+			        		        try {	
 			        		        attemptId = ((JSONObject) res.get("attempt")).getAsString("id");
+			        		        } catch( NullPointerException e ) {
+			        		        	this.topicProcessed.put("topicName", false);
+			        		        	this.attemptStartedOnMoodle = false;
+			        		        	error.put("text", "Your teacher seems to be currently working on this quiz, maybe try again later");
+			        		        	error.put("closeContext", true);
+			        		        	return Response.ok().entity(error).build();
+			        		        	
+			        		        }
 			        		        result = client.sendRequest("GET", "/webservice/rest/server.php?wstoken=" + wstoken + "&wsfunction=mod_quiz_process_attempt&attemptid=" + attemptId + "&finishattempt=1&moodlewsrestformat=json" , "",
 			        						"", MediaType.APPLICATION_JSON, headers);
 			        		        this.topicProcessed.put(topicName, false);
@@ -1395,12 +1415,12 @@ public class AssessmentHandlerService extends RESTService {
 						triggeredBody.put("msg", similarTopicNames.get(0));
 						return moodleQuiz(triggeredBody.toString());
 					}
-					JSONObject error = new JSONObject();
+					 error = new JSONObject();
 					error.put("text", "Multiple quizzes are similar to the name you wrote, which one of these do you want to start?\n" + similarNames);
 					error.put("closeContext" , "false");
 					return Response.ok().entity(error).build();
 				}	
-				JSONObject error = new JSONObject();
+				error = new JSONObject();
 				error.put("text", "Something went wrong when trying to start your quiz. Maybe try again later...");
 				this.topicsProposed.remove(channel);
 				return Response.ok().entity(error).build();
@@ -1425,6 +1445,7 @@ public class AssessmentHandlerService extends RESTService {
 					message = "REPLACE THIS WITH YOUR OK MESSAGE") })
 	public Response moodleQuizDe(String body) throws ParseException {
     	System.out.println(body);
+    	JSONObject error = new JSONObject();
 		JSONParser p = new JSONParser(JSONParser.MODE_PERMISSIVE);
 		JSONObject triggeredBody = (JSONObject) p.parse(body);
 		String channel = triggeredBody.getAsString("channel");
@@ -1506,7 +1527,15 @@ public class AssessmentHandlerService extends RESTService {
 			        				result = client.sendRequest("GET", "/webservice/rest/server.php?wstoken=" + wstoken + "&wsfunction=mod_quiz_start_attempt&quizid=" + quizid + "&moodlewsrestformat=json" , "",
 			        						"", MediaType.APPLICATION_JSON, headers);
 			        		        res = (JSONObject) p.parse(result.getResponse());
+			        		        try {	
 			        		        attemptId = ((JSONObject) res.get("attempt")).getAsString("id");
+			        		        } catch( NullPointerException e ) {
+			        		        	this.topicProcessed.put("topicName", false);
+			        		        	this.attemptStartedOnMoodle = false;
+			        		        	error.put("text", "Dein Lehrer scheint gerade an diesem Quiz zu arbeiten. Versuchen es später vielleicht noch einmal");
+			        		        	error.put("closeContext", true);
+			        		        	return Response.ok().entity(error).build();
+			        		        }
 			        		        result = client.sendRequest("GET", "/webservice/rest/server.php?wstoken=" + wstoken + "&wsfunction=mod_quiz_process_attempt&attemptid=" + attemptId + "&finishattempt=1&moodlewsrestformat=json" , "",
 			        						"", MediaType.APPLICATION_JSON, headers);
 			        		        this.topicProcessed.put(topicName, false);
@@ -1671,12 +1700,12 @@ public class AssessmentHandlerService extends RESTService {
 						triggeredBody.put("msg", similarTopicNames.get(0));
 						return moodleQuizDe(triggeredBody.toString());
 					}
-					JSONObject error = new JSONObject();
+					 error = new JSONObject();
 					error.put("text", "Mehrere Quizze entsprechen deiner Antwort, welche von diesen möchtest du denn anfangen?\n" + similarNames);
 					error.put("closeContext" , "false");
 					return Response.ok().entity(error).build();
 				}	
-				JSONObject error = new JSONObject();
+				 error = new JSONObject();
 				error.put("text", "Etwas ist schief gelaufe, versuche zu einem späteren Zeitpunkt erneut...");
 				this.topicsProposed.remove(channel);
 				return Response.ok().entity(error).build();
