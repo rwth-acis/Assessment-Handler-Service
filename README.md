@@ -1,6 +1,7 @@
 # Assessment-Handler-Service
 
 This service is used to conduct assessments with bots created with the current Social-Bot-Framework. The service will handle organizing the assessment content. The assessment content itself can be given during the bot modeling or can be extracted from the moodle platform.
+
 Build
 --------
 Execute the following command on your shell:
