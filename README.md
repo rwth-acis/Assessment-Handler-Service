@@ -44,6 +44,6 @@ To start a Nlu Assessment, a first RESTful POST request containing a JSON Body i
 POST <service-address>/AssessmentHandler/nluAssessment
 ```
 The JSON Body will need following attributes to be added by the user during the modeling:
-- assessmentContent: JSON Object containing: "topic": Name of the assessment; "Intents": array containing the intents that match the correct answers; "Hints": array containing the hints for the  questions; "Questions": array containing the questions for the assessment; "Sequence" array containing the sequence in which the questions should be asked.
+- assessmentContent: JSON Object containing: "topic": Name of the assessment; "Intents": array containing the intents that match the correct answers; "Hints": array containing the hints for the  questions; "Questions": array containing the questions for the assessment; "Sequence" array containing the sequence in which the questions should be asked. You have the possible to give an assessmentContent array which contains multiple assessments. 
 - helpIntent: The name of the intent which lets the service recognize that the user wants to receive a hint.    
 - quitIntent: The name of the intent which lets the service recognize that the user wants to stop the assessment.  
