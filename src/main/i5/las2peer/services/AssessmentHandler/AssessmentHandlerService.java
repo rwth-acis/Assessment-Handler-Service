@@ -569,6 +569,13 @@ public class AssessmentHandlerService extends RESTService {
 	 		        	this.addWrongQuestion(channel);
 	        		 }
 	        	} else if(this.getQuestionType(channel).equals("truefalse")) {
+	        		if(!("true".contains(msg.toLowerCase()) || "false".contains(msg.toLowerCase())) ) {
+	        			answer += "Please answer with \"True\" or \"False\"\n";
+        				JSONObject userMistake = new JSONObject();
+        				userMistake.put("text", answer);
+        				userMistake.put("closeContext", "false");
+        				return userMistake;
+        				}
 	        		 if(((JSONArray) this.currentAssessment.get(channel).get("Answers")).get(this.getCurrentQuestionNumber(channel)).toString().toLowerCase().contains(msg.toLowerCase())) {
 	        			answer += "Correct Answer! \n";
 	 		            this.incrementMark(channel, this.getMarkForCurrentQuestion(channel));
@@ -743,6 +750,13 @@ public class AssessmentHandlerService extends RESTService {
 	 		        	this.addWrongQuestion(channel);
 	        		 }
 	        	} else if(this.getQuestionType(channel).equals("truefalse")) {
+	        		if(!("wahr".contains(msg.toLowerCase()) || "falsch".contains(msg.toLowerCase())) ) {
+	        			answer += "Bitte antworte nur mit \"Wahr\" oder \"Falsch\"\n";
+        				JSONObject userMistake = new JSONObject();
+        				userMistake.put("text", answer);
+        				userMistake.put("closeContext", "false");
+        				return userMistake;
+	        		}
 	        		 if(((JSONArray) this.currentAssessment.get(channel).get("Answers")).get(this.getCurrentQuestionNumber(channel)).toString().toLowerCase().contains(msg.toLowerCase())) {
 	        			answer += "Richtige Antwort! \n";
 	 		            this.incrementMark(channel, this.getMarkForCurrentQuestion(channel));
