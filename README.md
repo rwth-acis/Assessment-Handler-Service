@@ -37,6 +37,13 @@ The JSON Body will need following attributes to be added by the user during the 
 - courseId: The courseId of the courses you want your quizzes to be extracted from (You can find the courseId by simply going to the specific course and read which id is written in the URL  "/course/view.php?id=courseId"). You can also give multiple courseId's if you want quizzes from multiple courses to be extracted.   
 - quitIntent: The name of the intent which lets the service recognize that the user wants to stop the assessment.  
 
+ **Following API Calls need to be unlocked for the given wstoken to be able to use the quiz function:**
+- core_course_get_contents
+- mod_quiz_start_attempt
+- mod_quiz_process_attempt
+- mod_quiz_get_attempt_review
+- mod_quiz_get_quiz_feedback_for_grade
+
 Conducting a Nlu Assessment
 --------
 To start a Nlu Assessment, a first RESTful POST request containing a JSON Body is necessary:
