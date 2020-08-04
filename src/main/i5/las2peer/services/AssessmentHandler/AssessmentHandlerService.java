@@ -537,7 +537,7 @@ public class AssessmentHandlerService extends RESTService {
 	            this.assessmentStarted.put(channel, null);
 	        	
 	            JSONObject result = new JSONObject();
-	            result.put("completion", true);
+	            result.put("completion", false);
 	            JSONObject score = new JSONObject();
 	            score.put("raw",  Double.parseDouble(this.getMarks(channel)));
 	            score.put("min",  0.0);
@@ -709,7 +709,9 @@ public class AssessmentHandlerService extends RESTService {
 		        }
 	        }
         } else if(assessmentType == "moodleAssessmentDe") {
+        	
 	        if(intent.equals(this.getQuitIntent(channel))) {
+	        	// add check if lrs is actually available...
 	        	answer += "Assessment ist fertig \n" + "Dein Endresultat ist *" + this.getMarks(channel) + "/" + this.getTotalMarksUntilCurrentQuestion(channel) + "* \n";  	
 	            if(this.getMarks(channel).equals(this.getTotalMarksUntilCurrentQuestion(channel))) {
 	            	answer += "Du hast keine falsche Antworten!";
@@ -717,7 +719,7 @@ public class AssessmentHandlerService extends RESTService {
 	        	this.assessmentStarted.put(channel, null);
 	        	
 	            JSONObject result = new JSONObject();
-	            result.put("completion", true);
+	            result.put("completion", false);
 	            JSONObject score = new JSONObject();
 	            score.put("raw",  Double.parseDouble(this.getMarks(channel)));
 	            score.put("min",  0.0);
@@ -728,6 +730,7 @@ public class AssessmentHandlerService extends RESTService {
 	            result.put("score", score);
 	            
 	            JSONObject xAPI = new JSONObject();
+	            
 	            xAPI.put("result", result);
 	     //       xAPI.put("timestamp",java.time.LocalDateTime.now() );
 	            xAPI.put("actor", this.currentAssessment.get(channel).get("actor"));
