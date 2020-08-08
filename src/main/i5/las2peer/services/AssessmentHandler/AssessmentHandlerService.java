@@ -465,6 +465,7 @@ public class AssessmentHandlerService extends RESTService {
     	response.put("closeContext", "false");
         if(assessmentType.equals("NLUAssessment")) {
 	        if(intent.equals(this.getQuitIntent(channel))){
+	        	// Additionall check to see if the quit intent was recongnized by accident (Writing "e a c" was recognized as quit once...)
 	        	// here should not be the entire size but the current number of questions .. 
 	        	answer += "Assessment is over \n" + "You got " + this.getMarks(channel) + "/" + this.getCurrentQuestionNumber(channel) + " Questions right! \n"; 
 	            if(this.getMarks(channel).equals(this.getCurrentQuestionNumber(channel))) {
@@ -528,36 +529,40 @@ public class AssessmentHandlerService extends RESTService {
 	        }
 	        
         } else if(assessmentType.equals("moodleAssessment")) {
-	        if(intent.equals(this.getQuitIntent(channel))) {
-	        	answer += "Assessment is over \n" + "Your final mark is *" + this.getMarks(channel) + "/" + (this.getTotalMarksUntilCurrentQuestion(channel) - this.getMarkForCurrentQuestion(channel)) + "* \n";  	
-	            if(this.getMarks(channel).equals((this.getTotalMarksUntilCurrentQuestion(channel) - this.getMarkForCurrentQuestion(channel)))) {
-	            	answer += "You got no questions wrong!";
-	            } else answer += "You got following Questions wrong: \n " + this.getWrongQuestions(channel);
+        	String msg = triggeredBody.getAsString("msg");
+	        if(intent.equals(this.getQuitIntent(channel)) && !checkIfAnswerToQuestion(msg, channel)) {
 	        	
-	            this.assessmentStarted.put(channel, null);
+	        		answer += "Assessment is over \n" + "Your final mark is *" + this.getMarks(channel) + "/" + (this.getTotalMarksUntilCurrentQuestion(channel) - this.getMarkForCurrentQuestion(channel)) + "* \n";  	
+		            if(this.getMarks(channel).equals((this.getTotalMarksUntilCurrentQuestion(channel) - this.getMarkForCurrentQuestion(channel)))) {
+		            	answer += "You got no questions wrong!";
+		            } else answer += "You got following Questions wrong: \n " + this.getWrongQuestions(channel);
+		        	
+		            this.assessmentStarted.put(channel, null);
+		        	
+		            JSONObject result = new JSONObject();
+		            result.put("completion", false);
+		            JSONObject score = new JSONObject();
+		            score.put("raw",  Double.parseDouble(this.getMarks(channel)));
+		            score.put("min",  0.0);
+		            score.put("max", Double.parseDouble(this.getMaxMarks(channel)));
+		            if(!score.getAsString("max").equals("0.0")) {
+		            	score.put("scaled", Double.parseDouble(this.getMarks(channel))/Double.parseDouble(this.getMaxMarks(channel)));
+		            }
+		            result.put("score", score);
+		            
+		            JSONObject xAPI = new JSONObject();
+		            xAPI.put("result", result);
+		     //       xAPI.put("timestamp",java.time.LocalDateTime.now() );
+		            xAPI.put("actor", this.currentAssessment.get(channel).get("actor"));
+		            xAPI.put("object", this.currentAssessment.get(channel).get("object"));
+		            xAPI.put("verb", this.currentAssessment.get(channel).get("verb"));
+		        	
+		            Context.get().monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_3,xAPI.toString() + "*" + triggeredBody.getAsString("email"));
+		            response.put("closeContext", "true");	
 	        	
-	            JSONObject result = new JSONObject();
-	            result.put("completion", false);
-	            JSONObject score = new JSONObject();
-	            score.put("raw",  Double.parseDouble(this.getMarks(channel)));
-	            score.put("min",  0.0);
-	            score.put("max", Double.parseDouble(this.getMaxMarks(channel)));
-	            if(!score.getAsString("max").equals("0.0")) {
-	            	score.put("scaled", Double.parseDouble(this.getMarks(channel))/Double.parseDouble(this.getMaxMarks(channel)));
-	            }
-	            result.put("score", score);
-	            
-	            JSONObject xAPI = new JSONObject();
-	            xAPI.put("result", result);
-	     //       xAPI.put("timestamp",java.time.LocalDateTime.now() );
-	            xAPI.put("actor", this.currentAssessment.get(channel).get("actor"));
-	            xAPI.put("object", this.currentAssessment.get(channel).get("object"));
-	            xAPI.put("verb", this.currentAssessment.get(channel).get("verb"));
 	        	
-	            Context.get().monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_3,xAPI.toString() + "*" + triggeredBody.getAsString("email"));
-	            response.put("closeContext", "true");
 	        } else { 
-	        	String msg = triggeredBody.getAsString("msg");
+	        	
 	        	// differ between true false / multiple answers, one answer 
 	        	// for multiple choice split with "," to have all the answers
 	        	if(this.getQuestionType(channel).equals("numerical") || this.getQuestionType(channel).equals("shortanswer") ) {
@@ -709,39 +714,42 @@ public class AssessmentHandlerService extends RESTService {
 		        }
 	        }
         } else if(assessmentType == "moodleAssessmentDe") {
-        	
-	        if(intent.equals(this.getQuitIntent(channel))) {
-	        	// add check if lrs is actually available...
-	        	answer += "Assessment ist fertig \n" + "Dein Endresultat ist *" + this.getMarks(channel) + "/" + this.getTotalMarksUntilCurrentQuestion(channel) + "* \n";  	
-	            if(this.getMarks(channel).equals(this.getTotalMarksUntilCurrentQuestion(channel))) {
-	            	answer += "Du hast keine falsche Antworten!";
-	            } else answer += "Du hast folgende Fragen falsch beantwortet: \n " + this.getWrongQuestions(channel);
-	        	this.assessmentStarted.put(channel, null);
+        	String msg = triggeredBody.getAsString("msg");
+	        if(intent.equals(this.getQuitIntent(channel)) && !checkIfAnswerToQuestion(msg, channel)) {
 	        	
-	            JSONObject result = new JSONObject();
-	            result.put("completion", false);
-	            JSONObject score = new JSONObject();
-	            score.put("raw",  Double.parseDouble(this.getMarks(channel)));
-	            score.put("min",  0.0);
-	            score.put("max", Double.parseDouble(this.getMaxMarks(channel)));
-	            if(!score.getAsString("max").equals("0.0")) {
-	            	score.put("scaled", Double.parseDouble(this.getMarks(channel))/Double.parseDouble(this.getMaxMarks(channel)));
-	            }
-	            result.put("score", score);
-	            
-	            JSONObject xAPI = new JSONObject();
-	            
-	            xAPI.put("result", result);
-	     //       xAPI.put("timestamp",java.time.LocalDateTime.now() );
-	            xAPI.put("actor", this.currentAssessment.get(channel).get("actor"));
-	            xAPI.put("object", this.currentAssessment.get(channel).get("object"));
-	            xAPI.put("verb", this.currentAssessment.get(channel).get("verb"));
+	        		// add check if lrs is actually available...
+		        	answer += "Assessment ist fertig \n" + "Dein Endresultat ist *" + this.getMarks(channel) + "/" + (this.getTotalMarksUntilCurrentQuestion(channel) - this.getMarkForCurrentQuestion(channel)) + "* \n";  	
+		            if(this.getMarks(channel).equals((this.getTotalMarksUntilCurrentQuestion(channel) - this.getMarkForCurrentQuestion(channel)))) {
+		            	answer += "Du hast keine falsche Antworten!";
+		            } else answer += "Du hast folgende Fragen falsch beantwortet: \n " + this.getWrongQuestions(channel);
+		        	this.assessmentStarted.put(channel, null);
+		        	
+		            JSONObject result = new JSONObject();
+		            result.put("completion", false);
+		            JSONObject score = new JSONObject();
+		            score.put("raw",  Double.parseDouble(this.getMarks(channel)));
+		            score.put("min",  0.0);
+		            score.put("max", Double.parseDouble(this.getMaxMarks(channel)));
+		            if(!score.getAsString("max").equals("0.0")) {
+		            	score.put("scaled", Double.parseDouble(this.getMarks(channel))/Double.parseDouble(this.getMaxMarks(channel)));
+		            }
+		            result.put("score", score);
+		            
+		            JSONObject xAPI = new JSONObject();
+		            
+		            xAPI.put("result", result);
+		     //       xAPI.put("timestamp",java.time.LocalDateTime.now() );
+		            xAPI.put("actor", this.currentAssessment.get(channel).get("actor"));
+		            xAPI.put("object", this.currentAssessment.get(channel).get("object"));
+		            xAPI.put("verb", this.currentAssessment.get(channel).get("verb"));
+		        	
+		            Context.get().monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_3,xAPI.toString() + "*" + triggeredBody.getAsString("email"));
+		            
+		            response.put("closeContext", "true");
 	        	
-	            Context.get().monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_3,xAPI.toString() + "*" + triggeredBody.getAsString("email"));
-	            
-	            response.put("closeContext", "true");
+	        	
 	        } else { 
-	        	String msg = triggeredBody.getAsString("msg");
+	        	
 	        	// differ between true false / multiple answers, one answer 
 	        	// for multiple choice split with "," to have all the answers
 	        	if(this.getQuestionType(channel).equals("numerical") || this.getQuestionType(channel).equals("shortanswer") ) {
@@ -966,6 +974,22 @@ public class AssessmentHandlerService extends RESTService {
     		 concat += splitLineBreak[i].split("\\.")[0];
     	 }
     	 return concat;
+    }
+    // Check if user msg was misread as quitIntent
+    private boolean checkIfAnswerToQuestion (String msg, String channel) {
+    	msg = msg.toLowerCase();
+    	// check if perhaps answer is similar to true/false, shortanswer or numerical question
+    	if("wahr".contains(msg) ||"falsch".contains(msg) || "true".contains(msg) || "false".contains(msg) || ((JSONArray) this.currentAssessment.get(channel).get("Answers")).get(this.getCurrentQuestionNumber(channel)).toString().toLowerCase().equals(msg)) {
+    		return true; 
+    	}
+    	//check if answer is perhaps answer to MCQ
+		String[] userAnswers = msg.split("\\s+");
+		for(int j = 0 ; j < userAnswers.length; j++ ){	
+			if(userAnswers[j].length() > 1) {
+				return false;
+			}
+		}
+    	return true;
     }
     
     @POST
@@ -1289,6 +1313,13 @@ public class AssessmentHandlerService extends RESTService {
 			        		        for(int k = 0 ; k < ((JSONArray) res.get("questions")).size() ; k++) {
 			        		        	html =  ((JSONObject)((JSONArray) res.get("questions")).get(k)).getAsString("html");
 			        		        	doc = Jsoup.parse(html);
+			        		        	assessment[k][2] = ((JSONObject)((JSONArray) res.get("questions")).get(k)).getAsString("type");
+		        		        		if(!assessment[k][2].equals("truefalse") && !assessment[k][2].equals("multichoice") && !assessment[k][2].equals("numerical") && !assessment[k][2].equals("shortanswer")) {
+		        		        			assessment[k][2] = "missing"; 
+		        		        			System.out.println("A question was skipped due to having an unhandled type");
+		        		        			Context.get().monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_2,"A question was skipped due to having an unhandled type");
+		        		        			continue;
+		        		        		}
 			        		        	assessment[k][3] = "";
 			        		        	assessment[k][4] = "";
 			        		        	assessment[k][5] = doc.getElementsByClass("grade").text().split("Marked out of ")[1];
@@ -1358,6 +1389,9 @@ public class AssessmentHandlerService extends RESTService {
 			        		        JSONArray Feedback = new JSONArray();
 			        		        int maxMark = 0;
 			        		        for(int k = 0 ; k < assessment.length ; k++) {
+			        		        	if(assessment[k][2].equals("missing")) {
+			        		        		continue;
+			        		        	}
 			        		        	Questions.add(assessment[k][0]);
 			        		        	if(assessment[k][2].equals("multichoice")) {
 			        		        		Answers.add(assessment[k][4]);
@@ -1568,6 +1602,13 @@ public class AssessmentHandlerService extends RESTService {
 			        		        for(int k = 0 ; k < ((JSONArray) res.get("questions")).size() ; k++) {
 			        		        	html =  ((JSONObject)((JSONArray) res.get("questions")).get(k)).getAsString("html");
 			        		        	doc = Jsoup.parse(html);
+			        		        	assessment[k][2] = ((JSONObject)((JSONArray) res.get("questions")).get(k)).getAsString("type");
+		        		        		if(!assessment[k][2].equals("truefalse") && !assessment[k][2].equals("multichoice") && !assessment[k][2].equals("numerical") && !assessment[k][2].equals("shortanswer")) {
+		        		        			assessment[k][2] = "missing"; 
+		        		        			System.out.println("A question was skipped due to having an unhandled type");
+		        		        			Context.get().monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_2,"A question was skipped due to having an unhandled type");
+		        		        			continue;
+		        		        		}
 			        		        	assessment[k][3] = "";
 			        		        	assessment[k][4] = "";
 			        		        	assessment[k][5] = doc.getElementsByClass("grade").text().split("Marked out of ")[1];
@@ -1588,7 +1629,7 @@ public class AssessmentHandlerService extends RESTService {
 			        		        		}
 		        		        		}
 		        		        		assessment[k][0] = questions ;
-		        		        		assessment[k][2] = ((JSONObject)((JSONArray) res.get("questions")).get(k)).getAsString("type");
+		        		        		
 		        		        		System.out.println(doc.getElementsByClass("qtext").text());
 		        		        		// to differentiate between questions with one answer and questions with multiple correct answers
 		        		        		if(doc.getElementsByClass("rightanswer").text().contains("answers")) {
@@ -1644,6 +1685,9 @@ public class AssessmentHandlerService extends RESTService {
 			        		        JSONArray Feedback = new JSONArray();
 			        		        int maxMark = 0;
 			        		        for(int k = 0 ; k < assessment.length ; k++) {
+			        		        	if(assessment[k][2].equals("missing")) {
+			        		        		continue;
+			        		        	}
 			        		        	Questions.add(assessment[k][0]);
 			        		        	if(assessment[k][2].equals("multichoice")) {
 			        		        		Answers.add(assessment[k][4]);
@@ -1723,7 +1767,7 @@ public class AssessmentHandlerService extends RESTService {
 					return Response.ok().entity(error).build();
 				}	
 				 error = new JSONObject();
-				error.put("text", "Etwas ist schief gelaufe, versuche zu einem späteren Zeitpunkt erneut...");
+				error.put("text", "Etwas ist schief gelaufen, versuche zu einem späteren Zeitpunkt erneut...");
 				this.topicsProposed.remove(channel);
 				return Response.ok().entity(error).build();
 			}	
