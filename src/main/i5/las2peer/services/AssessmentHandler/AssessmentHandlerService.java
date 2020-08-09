@@ -921,16 +921,15 @@ public class AssessmentHandlerService extends RESTService {
         JSONObject score = new JSONObject();
         score.put("raw", this.getMarks(channel));
         score.put("min",  0.0);
-        if(!score.getAsString("max").equals("0.0")) {
-        	if(completed) {
-        		score.put("max", this.getMaxMarks(channel));
-        		score.put("scaled", this.getMarks(channel)/this.getMaxMarks(channel));
-        	} else
-        	{
-        		score.put("max", (this.getTotalMarksUntilCurrentQuestion(channel) - this.getMarkForCurrentQuestion(channel)));
-        		score.put("scaled", this.getMarks(channel)/(this.getTotalMarksUntilCurrentQuestion(channel) - this.getMarkForCurrentQuestion(channel)));
-        	}
-        	
+        if(completed) {
+        	score.put("max", this.getMaxMarks(channel));
+        } else {
+        	score.put("max", (this.getTotalMarksUntilCurrentQuestion(channel) - this.getMarkForCurrentQuestion(channel)));
+        }
+        if(!score.getAsString("max").equals("0.0")) {	
+        	score.put("scaled", this.getMarks(channel)/this.getMaxMarks(channel));
+        } else {
+        	score.put("scaled", this.getMarks(channel)/(this.getTotalMarksUntilCurrentQuestion(channel) - this.getMarkForCurrentQuestion(channel)));	
         }
         result.put("score", score);
         JSONObject xAPI = new JSONObject();
@@ -1526,7 +1525,7 @@ public class AssessmentHandlerService extends RESTService {
 			}	
 		} else {
 			System.out.println("Why doesnt this work");
-			return Response.ok().entity(continueJSONAssessment(channel, triggeredBody.getAsString("intent"), triggeredBody, "moodleAssessmentDe")).build();
+			return Response.ok().entity(continueJSONAssessment(channel, triggeredBody.getAsString("intent"), triggeredBody, "moodleAssessmenAnswerstDe")).build();
 		}  
 	}    
     
