@@ -102,6 +102,7 @@ public class AssessmentHandlerService extends RESTService {
     
     private static HashMap<String, Boolean> topicsProposed = new HashMap<String, Boolean>();
     
+    
 	@POST
 	@Path("/assessment")
 	@Consumes(MediaType.TEXT_PLAIN)
@@ -1950,6 +1951,45 @@ public class AssessmentHandlerService extends RESTService {
     		return Response.ok().entity(b).build();
     	}
 		return null;
+	}
+    
+    @GET
+	@Path("/b")
+	@Consumes(MediaType.TEXT_PLAIN)
+	@Produces(MediaType.APPLICATION_JSON)
+	@ApiOperation(
+			value = "REPLACE THIS WITH AN APPROPRIATE FUNCTION NAME",
+			notes = "REPLACE THIS WITH YOUR NOTES TO THE FUNCTION")
+	@ApiResponses(
+			value = { @ApiResponse(
+					code = HttpURLConnection.HTTP_OK,
+					message = "REPLACE THIS WITH YOUR OK MESSAGE") })
+	public Response b() {
+    	  assessmentStarted = new HashMap<String, String>();
+    	    // Used to keep track at which question one currently is of the given assessment
+    	    // Key is the channelId
+    	     currQuestion = new HashMap<String, Integer>();
+    	    // Used to keep the assessment that is currently being done
+    	    // Key is the channelId 
+    	    currAssessment = new HashMap<String, String[][]>();
+    	    currentAssessment = new HashMap<String, JSONObject>();
+    	    
+    	    // Used to keep track of the # of correct answers
+    	    currPoints = new HashMap<String, Integer>();
+    	    // Used to keep track on which Questions were answered wrongly
+    	    currCorrectQuestions = new HashMap<String, String>();
+    	    // Used to keep track on how many Questions were answered correctly
+    	     score = new HashMap<String, Integer>();
+    	    // Used for asking the questions in the right order
+    	  questionsAsked = new HashMap<String, Integer>();   
+    	    
+    	   topicProcessed = new HashMap<String, Boolean>();  
+    	    
+    	    attemptStartedOnMoodle = false;
+    	    
+    	    topicsProposed = new HashMap<String, Boolean>();
+    	    JSONObject error = new JSONObject();
+    	    return Response.ok().entity(error).build();
 	}
     
     
