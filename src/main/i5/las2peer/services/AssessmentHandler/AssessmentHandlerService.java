@@ -1964,7 +1964,7 @@ public class AssessmentHandlerService extends RESTService {
 			value = { @ApiResponse(
 					code = HttpURLConnection.HTTP_OK,
 					message = "REPLACE THIS WITH YOUR OK MESSAGE") })
-	public Response b() {
+	public Response b(String body) {
     	  assessmentStarted = new HashMap<String, String>();
     	    // Used to keep track at which question one currently is of the given assessment
     	    // Key is the channelId
@@ -1988,6 +1988,7 @@ public class AssessmentHandlerService extends RESTService {
     	    attemptStartedOnMoodle = false;
     	    
     	    topicsProposed = new HashMap<String, Boolean>();
+    	    System.out.println("worked");
     	    JSONObject error = new JSONObject();
     	    return Response.ok().entity(error).build();
 	}
