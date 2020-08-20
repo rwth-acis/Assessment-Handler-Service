@@ -749,7 +749,7 @@ public class AssessmentHandlerService extends RESTService {
 					message = "REPLACE THIS WITH YOUR OK MESSAGE") })
 	public Response moodleQuiz(String body) throws ParseException {
     	JSONObject error = new JSONObject();
-    	System.out.println(body);
+    //	System.out.println(body);
 		JSONParser p = new JSONParser(JSONParser.MODE_PERMISSIVE);
 		JSONObject triggeredBody = (JSONObject) p.parse(body);
 		String channel = triggeredBody.getAsString("channel");
@@ -758,13 +758,13 @@ public class AssessmentHandlerService extends RESTService {
 		channels.add(channel);
 		botChannel.put(triggeredBody.getAsString("botName"), channels);
 		if(!(triggeredBody.get("courseId") instanceof JSONArray)) {
-			System.out.println("course id is :");
+		//	System.out.println("course id is :");
 			JSONArray courseId = new JSONArray();
 			courseId.add(triggeredBody.get("courseId"));
 			triggeredBody.put("courseId", courseId);
 		}
 		JSONArray courseIds =(JSONArray) triggeredBody.get("courseId");
-		System.out.println(triggeredBody.getAsString("msg"));
+	//	System.out.println(triggeredBody.getAsString("msg"));
 		String quizid="";
 		String attemptId = "";
 		if(assessmentStarted.get(channel) == null) {
@@ -877,7 +877,22 @@ public class AssessmentHandlerService extends RESTService {
 		        		        		} else {
 		        		        			for(int l = 0 ; l < doc.getElementsByClass("qtext").get(0).getElementsByTag("p").size() ; l++) {
 			        		        			if(!doc.getElementsByClass("qtext").get(0).getElementsByTag("p").get(l).text().equals("")) {
-			        		        				questions +=  "*"+doc.getElementsByClass("qtext").get(0).getElementsByTag("p").get(l).text() + "*\n";
+			        		        				String str = doc.getElementsByClass("qtext").get(0).getElementsByTag("p").get(l).html();
+			        		        				// Explanation: Moodle is not really consistent when creating the quizzes. Sometimes, the quiz text was in one single <p> element, other times there were <p> for all sentence, other times <br> came out of nowhere...
+			        		        				// Therefore, the solution provided here is not really pretty, but as long as it works....
+			        		        				str = str.replace("<br>", "\\n");
+			        		        				str = str.replace("&nbsp;", "WhiteSpaceHere");
+			        		        				String split  = "";
+			        		        				Document replace = Jsoup.parse(str);
+			        		        				str = replace.text();
+			        		        				for(int f = 0; f < str.split("\\\\n").length ; f++) {
+			                                    		System.out.println(f);
+			                                    		if((f+1) == str.split("\\\\n").length) {
+			                                    			split += "*" + str.split("\\\\n")[f] + "*";
+			                                    		} else split += "*" + str.split("\\\\n")[f] + "* \n ";
+			                                    	}
+			        		        				split = split.replace("WhiteSpaceHere", " ");
+			        		        				questions +=   split + "\n";
 			        		        			}
 			        		        			if(doc.getElementsByClass("qtext").get(0).getElementsByTag("p").get(l).text().equals("") && doc.getElementsByClass("qtext").get(0).getElementsByTag("p").size() == 1) {
 			        		        				questions +=  "*"+doc.getElementsByClass("qtext").text() + "*\n";
@@ -886,7 +901,6 @@ public class AssessmentHandlerService extends RESTService {
 		        		        		}
 		        		        		assessment[k][0] = questions ;
 		        		        		assessment[k][2] = ((JSONObject)((JSONArray) res.get("questions")).get(k)).getAsString("type");
-		        		        		System.out.println(doc.getElementsByClass("qtext").text());
 		        		        		// to differentiate between questions with one answer and questions with multiple correct answers
 		        		        		if(doc.getElementsByClass("rightanswer").text().contains("answers")) {
 		        		        			assessment[k][3] += "Select one or more (Separate your answers with a whitespace, e.g : a b): \n";
@@ -911,18 +925,18 @@ public class AssessmentHandlerService extends RESTService {
 		        		        				assessment[k][3] +=" • "+ item.text() + " \n";
 		        		        				System.out.println(item.text() + "\n");
 		        		        				if(assessment[k][2].equals("multichoice") ) {
-		        		        					System.out.println(assessment[k][1] + "is at " + item.text().split("\\.")[0] );
+		        		        	//				System.out.println(assessment[k][1] + "is at " + item.text().split("\\.")[0] );
 		        		        					if(doc.getElementsByClass("rightanswer").text().contains("answers")) {
-		        		        						System.out.println("correct answer are: " + assessment[k][1]);
+		        		        					//	System.out.println("correct answer are: " + assessment[k][1]);
 		        		        						if(assessment[k][1].contains(item.text().split("\\.",2)[1])) {
 				        		        					assessment[k][4] += item.text().split("\\.")[0] + " ; ";
-				        		        					System.out.println("asskeement is :" +  assessment[k][4]);
+				        		        				//	System.out.println("asskeement is :" +  assessment[k][4]);
 				        		        				}
 		        		        					} else {
 		        		        						System.out.println("correct answer is: " + assessment[k][1]);
 		        		        						if(item.text().split("\\.",2)[1].contains(assessment[k][1])) {
 				        		        					assessment[k][4] += item.text().split("\\.")[0] + " ; ";
-				        		        					System.out.println("asskeement is :2" +  assessment[k][4]);
+				        		        					//System.out.println("asskeement is :2" +  assessment[k][4]);
 				        		        				}
 		        		        					}
 		        		        				}
@@ -1155,7 +1169,22 @@ public class AssessmentHandlerService extends RESTService {
 		        		        		} else {
 		        		        			for(int l = 0 ; l < doc.getElementsByClass("qtext").get(0).getElementsByTag("p").size() ; l++) {
 			        		        			if(!doc.getElementsByClass("qtext").get(0).getElementsByTag("p").get(l).text().equals("")) {
-			        		        				questions +=  "*"+doc.getElementsByClass("qtext").get(0).getElementsByTag("p").get(l).text() + "*\n";
+			        		        				String str = doc.getElementsByClass("qtext").get(0).getElementsByTag("p").get(l).html();
+			        		        				// Explanation: Moodle is not really consistent when creating the quizzes. Sometimes, the quiz text was in one single <p> element, other times there were <p> for all sentence, other times <br> came out of nowhere...
+			        		        				// Therefore, the solution provided here is not really pretty, but as long as it works....
+			        		        				str = str.replace("<br>", "\\n");
+			        		        				str = str.replace("&nbsp;", "WhiteSpaceHere");
+			        		        				String split  = "";
+			        		        				Document replace = Jsoup.parse(str);
+			        		        				str = replace.text();
+			        		        				for(int f = 0; f < str.split("\\\\n").length ; f++) {
+			                                    		System.out.println(f);
+			                                    		if((f+1) == str.split("\\\\n").length) {
+			                                    			split += "*" + str.split("\\\\n")[f] + "*";
+			                                    		} else split += "*" + str.split("\\\\n")[f] + "* \n ";
+			                                    	}
+			        		        				split = split.replace("WhiteSpaceHere", " ");
+			        		        				questions +=   split + "\n";
 			        		        			}
 			        		        			if(doc.getElementsByClass("qtext").get(0).getElementsByTag("p").get(l).text().equals("") && doc.getElementsByClass("qtext").get(0).getElementsByTag("p").size() == 1) {
 			        		        				questions +=  "*"+doc.getElementsByClass("qtext").text() + "*\n";
@@ -1163,8 +1192,7 @@ public class AssessmentHandlerService extends RESTService {
 			        		        		}
 		        		        		}
 		        		        		assessment[k][0] = questions ;
-		        		        		
-		        		        		System.out.println(doc.getElementsByClass("qtext").text());
+		        		    
 		        		        		// to differentiate between questions with one answer and questions with multiple correct answers
 		        		        		if(doc.getElementsByClass("rightanswer").text().contains("answers")) {
 		        		        			assessment[k][3] += "Wähle eine oder mehrere Antworten ( Trenne deine Antworten mit einem Leerzeichen, bsp. : a b): \n";
@@ -1194,7 +1222,6 @@ public class AssessmentHandlerService extends RESTService {
 		        		        						assessment[k][3] +=" • "+ "Wahr" + " \n";
 		        		        					} else assessment[k][3] +=" • "+ "Falsch" + " \n";
 		        		        				} else assessment[k][3] +=" • "+ item.text() + " \n";
-		        		        				System.out.println(item.text() + "\n");
 		        		        				if(assessment[k][2].equals("multichoice")) {
 		        		        					System.out.println(assessment[k][1] + "is at " + item.text().split("\\.")[0] );
 		        		        					if(doc.getElementsByClass("rightanswer").text().contains("answers")) {
