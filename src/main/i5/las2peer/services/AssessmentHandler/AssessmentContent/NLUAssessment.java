@@ -6,11 +6,12 @@ public class NLUAssessment extends Assessment {
 	
 	private String helpIntent;
 	private ArrayList<String> intents;
-	
-	public NLUAssessment(String quitIntent, ArrayList<String> questions, ArrayList<String> intents, String helpIntent) {
+	private ArrayList<String> hints;
+	public NLUAssessment(String quitIntent, ArrayList<String> questions, ArrayList<String> intents, ArrayList<String> hints, String helpIntent) {
 		super(quitIntent, questions);
 		this.helpIntent = helpIntent;
 		this.intents = intents;
+		this.hints = hints;
 	}
 	
 	public String getCorrectAnswerIntent() {

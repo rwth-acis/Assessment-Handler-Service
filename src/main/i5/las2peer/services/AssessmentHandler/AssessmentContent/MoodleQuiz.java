@@ -50,7 +50,7 @@ public class MoodleQuiz extends Assessment {
 		return this.typeOfEachQuestion.get(this.getCurrentQuestionNumber());
 	}
 	
-	public String getAnwer() {
+	public String getAnswer() {
 		return this.correctAnswers.get(this.getCurrentQuestionNumber());
 	}
 	
