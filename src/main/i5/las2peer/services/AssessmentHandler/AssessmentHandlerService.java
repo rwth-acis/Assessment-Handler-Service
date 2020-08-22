@@ -504,7 +504,7 @@ public class AssessmentHandlerService extends RESTService {
 	        			double splitMark = quiz.getMarkForCurrentQuestion()/(multipleAnswers.length-1);
 	        			int numberOfCorrectAnswers = 0;
         				for(int j = 0 ; j < userAnswers.length; j++ ){	
-        					if(userAnswers[j].length() > 1 || !quiz.getAnswerPossibilitiesForMCQ().toLowerCase().contains(userAnswers[j])) {
+        					if(userAnswers[j].length() > 1 || !quiz.getAnswerPossibilitiesForMCQ().toLowerCase().contains(userAnswers[j].toLowerCase())) {
 	        					answer += "Please only enter the letters/numbers corresponding to the given answers!\n";
 		        				JSONObject userMistake = new JSONObject();
 		        				userMistake.put("text", answer);
@@ -654,7 +654,7 @@ public class AssessmentHandlerService extends RESTService {
 	        			double splitMark = quiz.getMarkForCurrentQuestion()/(multipleAnswers.length-1);
 	        			int numberOfCorrectAnswers = 0;
         				for(int j = 0 ; j < userAnswers.length; j++ ){	
-        					if(userAnswers[j].length() > 1 || !quiz.getAnswerPossibilitiesForMCQ().toLowerCase().contains(userAnswers[j])) {
+        					if(userAnswers[j].length() > 1 || !quiz.getAnswerPossibilitiesForMCQ().toLowerCase().contains(userAnswers[j].toLowerCase())) {
 	        					answer += "Bitte antworte nur mit den vorgegebenen Buchstaben/Zahlen!\n";
 		        				JSONObject userMistake = new JSONObject();
 		        				userMistake.put("text", answer);
