@@ -873,7 +873,9 @@ public class AssessmentHandlerService extends RESTService {
 			        		        	} else assessment[k][6] = "";
 		        		        		questions = "";
 		        		        		if(doc.getElementsByClass("qtext").get(0).getElementsByTag("p").size() == 0) {
-		        		        			questions = "*"+doc.getElementsByClass("qtext").text() + "*\n";
+		        		        			if(!doc.getElementsByClass("qtext").text().equals("")) {
+		        		        				questions +=  "*"+doc.getElementsByClass("qtext").text() + "*\n";
+		        		        			}
 		        		        		} else {
 		        		        			for(int l = 0 ; l < doc.getElementsByClass("qtext").get(0).getElementsByTag("p").size() ; l++) {
 			        		        			if(!doc.getElementsByClass("qtext").get(0).getElementsByTag("p").get(l).text().equals("")) {
@@ -887,16 +889,23 @@ public class AssessmentHandlerService extends RESTService {
 			        		        				str = replace.text();
 			        		        				for(int f = 0; f < str.split("\\\\n").length ; f++) {
 			                                    		System.out.println(f);
-			                                    		if((f+1) == str.split("\\\\n").length) {
-			                                    			split += "*" + str.split("\\\\n")[f] + "*";
-			                                    		} else split += "*" + str.split("\\\\n")[f] + "* \n ";
+			                                    		if(!str.split("\\\\n")[f].equals("")) {
+				                                    		if((f+1) == str.split("\\\\n").length) {
+				                                    			split += "*" + str.split("\\\\n")[f] + "*";
+				                                    		} else split += "*" + str.split("\\\\n")[f] + "* \n ";
+				                                    	}
 			                                    	}
 			        		        				split = split.replace("WhiteSpaceHere", " ");
-			        		        				questions +=   split + "\n";
-			        		        			}
+			        		        				if(!split.equals("")) {
+			        		        					questions +=   split + "\n";
+			        		        				}
+			        		        				}
 			        		        			if(doc.getElementsByClass("qtext").get(0).getElementsByTag("p").get(l).text().equals("") && doc.getElementsByClass("qtext").get(0).getElementsByTag("p").size() == 1) {
-			        		        				questions +=  "*"+doc.getElementsByClass("qtext").text() + "*\n";
-			        		        			}
+			        		        				if(!doc.getElementsByClass("qtext").text().equals("")) {
+			        		        					questions +=  "*"+doc.getElementsByClass("qtext").text() + "*\n";
+			        		        				}
+			        		        				
+			        		        			}			
 			        		        		}
 		        		        		}
 		        		        		assessment[k][0] = questions ;
@@ -1179,16 +1188,23 @@ public class AssessmentHandlerService extends RESTService {
 			        		        				str = replace.text();
 			        		        				for(int f = 0; f < str.split("\\\\n").length ; f++) {
 			                                    		System.out.println(f);
-			                                    		if((f+1) == str.split("\\\\n").length) {
-			                                    			split += "*" + str.split("\\\\n")[f] + "*";
-			                                    		} else split += "*" + str.split("\\\\n")[f] + "* \n ";
+			                                    		if(!str.split("\\\\n")[f].equals("")) {
+				                                    		if((f+1) == str.split("\\\\n").length) {
+				                                    			split += "*" + str.split("\\\\n")[f] + "*";
+				                                    		} else split += "*" + str.split("\\\\n")[f] + "* \n ";
+				                                    	}
 			                                    	}
 			        		        				split = split.replace("WhiteSpaceHere", " ");
-			        		        				questions +=   split + "\n";
-			        		        			}
+			        		        				if(!split.equals("")) {
+			        		        					questions +=   split + "\n";
+			        		        				}
+			        		        				}
 			        		        			if(doc.getElementsByClass("qtext").get(0).getElementsByTag("p").get(l).text().equals("") && doc.getElementsByClass("qtext").get(0).getElementsByTag("p").size() == 1) {
-			        		        				questions +=  "*"+doc.getElementsByClass("qtext").text() + "*\n";
-			        		        			}
+			        		        				if(!doc.getElementsByClass("qtext").text().equals("")) {
+			        		        					questions +=  "*"+doc.getElementsByClass("qtext").text() + "*\n";
+			        		        				}
+			        		        				
+			        		        			}			
 			        		        		}
 		        		        		}
 		        		        		assessment[k][0] = questions ;
@@ -1219,7 +1235,7 @@ public class AssessmentHandlerService extends RESTService {
 		        		        			for(Element item : multiChoiceAnswers) {
 		        		        				if(assessment[k][2].equals("truefalse")) {
 		        		        					if(item.text().toLowerCase().contains("true")) {
-		        		        						assessment[k][3] +=" • "+ "Wahr" + " \n";
+		        		        						assessment[k][3] += "• "+ "Wahr" + " \n";
 		        		        					} else assessment[k][3] +=" • "+ "Falsch" + " \n";
 		        		        				} else assessment[k][3] +=" • "+ item.text() + " \n";
 		        		        				if(assessment[k][2].equals("multichoice")) {
