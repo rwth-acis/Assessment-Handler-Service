@@ -186,7 +186,7 @@ public class AssessmentHandlerService extends RESTService {
 
 			} else {
 				System.out.println(bodyJson.getAsString("intent"));
-				return Response.ok().entity(continueJSONAssessment(channel, bodyJson.getAsString("intent"), bodyJson, "NLUAssessment")).build();
+				return Response.ok().entity(continueAssessment(channel, bodyJson.getAsString("intent"), bodyJson, "NLUAssessment")).build();
 			}		
 			
 		} catch (ParseException e) {
@@ -295,7 +295,7 @@ public class AssessmentHandlerService extends RESTService {
 
 			} else {
 				System.out.println(bodyJson.getAsString("intent"));
-				return Response.ok().entity(continueJSONAssessment(channel, bodyJson.getAsString("intent"), bodyJson, "NLUAssessmentDe")).build();
+				return Response.ok().entity(continueAssessment(channel, bodyJson.getAsString("intent"), bodyJson, "NLUAssessmentDe")).build();
 			}		
 			
 		} catch (ParseException e) {
@@ -361,7 +361,7 @@ public class AssessmentHandlerService extends RESTService {
 	}
 	
 	
-    private JSONObject continueJSONAssessment(String channel, String intent, JSONObject triggeredBody, String assessmentType){
+    private JSONObject continueAssessment(String channel, String intent, JSONObject triggeredBody, String assessmentType){
     	JSONObject response = new JSONObject();
     	String answer = "";    	
     	response.put("closeContext", "false");
@@ -1035,7 +1035,7 @@ public class AssessmentHandlerService extends RESTService {
 			}	
 		} else {
 			System.out.println("Why doesnt this work");
-			return Response.ok().entity(continueJSONAssessment(channel, triggeredBody.getAsString("intent"), triggeredBody, "moodleAssessment")).build();
+			return Response.ok().entity(continueAssessment(channel, triggeredBody.getAsString("intent"), triggeredBody, "moodleAssessment")).build();
 		}  
 	}
        
@@ -1335,7 +1335,7 @@ public class AssessmentHandlerService extends RESTService {
 			}	
 		} else {
 			System.out.println("Why doesnt this work");
-			return Response.ok().entity(continueJSONAssessment(channel, triggeredBody.getAsString("intent"), triggeredBody, "moodleAssessmentDe")).build();
+			return Response.ok().entity(continueAssessment(channel, triggeredBody.getAsString("intent"), triggeredBody, "moodleAssessmentDe")).build();
 		}  
 	}   
     

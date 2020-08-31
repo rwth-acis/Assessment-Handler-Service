@@ -2,8 +2,6 @@ package i5.las2peer.services.AssessmentHandler.AssessmentContent;
 
 import java.util.ArrayList;
 
-import net.minidev.json.JSONArray;
-
 public abstract class Assessment {
 	private String topicName;
 	private String quitIntent;
