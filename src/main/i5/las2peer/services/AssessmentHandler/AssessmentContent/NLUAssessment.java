@@ -18,7 +18,12 @@ public class NLUAssessment extends Assessment {
 		return this.intents.get(this.getCurrentQuestionNumber());
 	}
 	
+	public String getQuestionHint() {
+		return this.hints.get(this.getCurrentQuestionNumber());
+	}
+	
 	public String getHelpIntent() {
 		return this.helpIntent;
 	}
+	
 }

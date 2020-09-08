@@ -376,7 +376,7 @@ public class AssessmentHandlerService extends RESTService {
 	        	this.assessmentStarted.put(channel, null);
 	            response.put("closeContext", "true");
 	        } else if(intent.equals(assessment.getHelpIntent())){
-	        	answer+= assessment.getHelpIntent() + "\n";
+	        	answer+= assessment.getQuestionHint() + "\n";
 	        	response.put("closeContext", "false");
 	        } else { 
 		        if(intent.equals(assessment.getCorrectAnswerIntent())){
@@ -408,7 +408,7 @@ public class AssessmentHandlerService extends RESTService {
 	        	this.assessmentStarted.put(channel, null);
 	            response.put("closeContext", "true");
 	        } else if(intent.equals(assessment.getHelpIntent())){
-	        	answer+= assessment.getHelpIntent() + "\n";
+	        	answer+= assessment.getQuestionHint() + "\n";
 	        	response.put("closeContext", "false");
 	        } else { 
 		        if(intent.equals(assessment.getCorrectAnswerIntent())){
