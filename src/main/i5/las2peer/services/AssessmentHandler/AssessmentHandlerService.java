@@ -755,8 +755,12 @@ public class AssessmentHandlerService extends RESTService {
 		String channel = triggeredBody.getAsString("channel");
 		String wstoken = triggeredBody.getAsString("wstoken");
 		ArrayList<String> channels =  botChannel.get(triggeredBody.getAsString("botName"));
-		channels.add(channel);
-		botChannel.put(triggeredBody.getAsString("botName"), channels);
+		if(channels == null) { // should definitely not be the case
+			this.botChannel.put(triggeredBody.getAsString("botName"), new ArrayList<String>());
+		} else {
+			channels.add(channel);
+			botChannel.put(triggeredBody.getAsString("botName"), channels);
+		} 
 		if(!(triggeredBody.get("courseId") instanceof JSONArray)) {
 		//	System.out.println("course id is :");
 			JSONArray courseId = new JSONArray();
