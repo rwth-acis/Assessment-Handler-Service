@@ -1,0 +1,5 @@
+agent-user-alice.xml;pwalice
+agent-user-bobby.xml;pwbobby
+agent-user-joey.xml;pwjoey
+
+i5.las2peer.services.AssessmentHandler.AssessmentHandlerService@1.0.0.xml;ZHN9KZvM2V5SykzZw0A2
