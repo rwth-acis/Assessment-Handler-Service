@@ -979,7 +979,7 @@ public class AssessmentHandlerService extends RESTService {
 			        		        	Feedback.add(assessment[k][6]);
 			        		        }
 			        		        JSONObject actor =  new JSONObject();
-			        		        actor.put("mbox", "mailto:" + triggeredBody.getAsString("email"));
+			        		        actor.put("mbox", triggeredBody.getAsString("email"));
 			        		        actor.put("objectType", "Agent");
 			        		        JSONObject verb = new JSONObject();
 			        		        JSONObject display = new JSONObject();
@@ -1280,7 +1280,7 @@ public class AssessmentHandlerService extends RESTService {
 			        		        	Feedback.add(assessment[k][6]);
 			        		        }
 			        		        JSONObject actor =  new JSONObject();
-			        		        actor.put("mbox", "mailto:" + triggeredBody.getAsString("email"));
+			        		        actor.put("mbox", triggeredBody.getAsString("email"));
 			        		        actor.put("objectType", "Agent");
 			        		        JSONObject verb = new JSONObject();
 			        		        JSONObject display = new JSONObject();
