@@ -1,6 +1,8 @@
 package i5.las2peer.services.AssessmentHandler;
 
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -38,9 +40,12 @@ import net.minidev.json.JSONArray;
 import net.minidev.json.parser.JSONParser;
 import net.minidev.json.parser.ParseException;
 
+import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.util.Iterator;
 
 import org.jsoup.Jsoup;
@@ -371,6 +376,8 @@ public class AssessmentHandlerService extends RESTService {
 			String assessmentType) {
 		JSONObject response = new JSONObject();
 		String answer = "";
+		String lrsURL = triggeredBody.getAsString("lrsURL");
+		String lrsToken = triggeredBody.getAsString("lrsToken");
 		response.put("closeContext", "false");
 		if (assessmentType.equals("NLUAssessment")) {
 			NLUAssessment assessment = this.currentNLUAssessment.get(channel);
@@ -468,9 +475,9 @@ public class AssessmentHandlerService extends RESTService {
 					answer += "You got following Questions wrong: \n " + quiz.getWrongQuestions();
 
 				this.assessmentStarted.put(channel, null);
-
+				JSONObject xAPI = quiz.createXAPIForMoodle(false);
 				Context.get().monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_3,
-						quiz.createXAPIForMoodle(false).toString() + "*" + triggeredBody.getAsString("email"));
+						xAPI.toString() + "*" + triggeredBody.getAsString("email"));
 				response.put("closeContext", "true");
 
 			} else {
@@ -613,8 +620,9 @@ public class AssessmentHandlerService extends RESTService {
 								+ quiz.getMaxMarks() + "*  \n You got following Questions wrong: \n "
 								+ quiz.getWrongQuestions();
 					this.assessmentStarted.put(channel, null);
+					JSONObject xAPI = quiz.createXAPIForMoodle(true);
 					Context.get().monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_3,
-							quiz.createXAPIForMoodle(true).toString() + "*" + triggeredBody.getAsString("email"));
+							xAPI.toString() + "*" + triggeredBody.getAsString("email"));
 
 					response.put("closeContext", "true");
 				} else {
@@ -634,9 +642,9 @@ public class AssessmentHandlerService extends RESTService {
 				} else
 					answer += "Du hast folgende Fragen falsch beantwortet: \n " + quiz.getWrongQuestions();
 				this.assessmentStarted.put(channel, null);
-
+				JSONObject xAPI = quiz.createXAPIForMoodle(false);
 				Context.get().monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_3,
-						quiz.createXAPIForMoodle(false).toString() + "*" + triggeredBody.getAsString("email"));
+						xAPI.toString() + "*" + triggeredBody.getAsString("email"));
 
 				response.put("closeContext", "true");
 
@@ -781,8 +789,9 @@ public class AssessmentHandlerService extends RESTService {
 								+ quiz.getMaxMarks() + "*  \n Du hast folgende Fragen falsch beantwortet: \n "
 								+ quiz.getWrongQuestions();
 					this.assessmentStarted.put(channel, null);
+					JSONObject xAPI = quiz.createXAPIForMoodle(true);
 					Context.get().monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_3,
-							quiz.createXAPIForMoodle(true).toString() + "*" + triggeredBody.getAsString("email"));
+							xAPI.toString() + "*" + triggeredBody.getAsString("email"));
 					response.put("closeContext", "true");
 				} else {
 					answer += quiz.getCurrentQuestion() + quiz.getPossibilities();
@@ -1100,9 +1109,9 @@ public class AssessmentHandlerService extends RESTService {
 									actor.put("account", account);
 									JSONObject verb = new JSONObject();
 									JSONObject display = new JSONObject();
-									display.put("en-US", "completed");
+									display.put("en-US", "completed_quiz");
 									verb.put("display", display);
-									verb.put("id", "https://w3id.org/xapi/dod-isd/verbs/completed");
+									verb.put("id", "https://w3id.org/xapi/dod-isd/verbs/completed_quiz");
 									JSONObject object = new JSONObject();
 									JSONObject definition = new JSONObject();
 									JSONObject name = new JSONObject();
@@ -1471,9 +1480,9 @@ public class AssessmentHandlerService extends RESTService {
 									actor.put("account", account);
 									JSONObject verb = new JSONObject();
 									JSONObject display = new JSONObject();
-									display.put("en-US", "completed");
+									display.put("en-US", "completed_quiz");
 									verb.put("display", display);
-									verb.put("id", "https://w3id.org/xapi/dod-isd/verbs/completed");
+									verb.put("id", "https://w3id.org/xapi/dod-isd/verbs/completed_quiz");
 									JSONObject object = new JSONObject();
 									JSONObject definition = new JSONObject();
 									JSONObject name = new JSONObject();
@@ -1632,6 +1641,44 @@ public class AssessmentHandlerService extends RESTService {
 		System.out.println("worked");
 		JSONObject error = new JSONObject();
 		return Response.ok().entity(error).build();
+	}
+
+	public void sendXAPIStatement(JSONObject xAPI, String lrsAuthToken, String lrsURL) {
+		// Copy pasted from LL service
+		// POST statements
+		try {
+			System.out.println(xAPI);
+			URL url = new URL(lrsURL + "/data/xAPI/statements");
+			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+			conn.setDoOutput(true);
+			conn.setDoInput(true);
+			conn.setRequestMethod("POST");
+			conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+			conn.setRequestProperty("X-Experience-API-Version", "1.0.3");
+			conn.setRequestProperty("Authorization", "Basic " + lrsAuthToken);
+			conn.setRequestProperty("Cache-Control", "no-cache");
+			conn.setUseCaches(false);
+
+			OutputStream os = conn.getOutputStream();
+			os.write(xAPI.toString().getBytes("utf-8"));
+			os.flush();
+
+			BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), "UTF-8"));
+			String line = "";
+			StringBuilder response = new StringBuilder();
+
+			while ((line = reader.readLine()) != null) {
+				response.append(line);
+			}
+
+
+			conn.disconnect();
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
 	}
 
 }

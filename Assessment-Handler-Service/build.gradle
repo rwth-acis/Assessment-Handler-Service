@@ -10,6 +10,7 @@
 plugins {
     // Apply the application plugin to add support for building a CLI application in Java.
     id 'application'
+    id 'java'
 }
 
 repositories {
@@ -29,15 +30,16 @@ repositories {
 dependencies {
     // This dependency is used by the application.
     implementation 'com.google.guava:guava:30.1.1-jre'
-    implementation "javax.websocket:javax.websocket-api:1.1"
-    implementation "org.glassfish.tyrus.bundles:tyrus-standalone-client:1.15"
-    implementation "org.json:json:20190722" 
-    testImplementation "junit:junit:4.13.2"
-
+    implementation "i5:las2peer-bundle:${project.property('core.version')}"
+    implementation 'javax.websocket:javax.websocket-api:1.1'
+    implementation 'org.glassfish.tyrus.bundles:tyrus-standalone-client:1.15'
+    implementation 'org.json:json:20190722' 
+    testImplementation 'junit:junit:4.13.2'
+    implementation 'org.jacoco:org.jacoco.ant:0.8.7'
     // las2peer bundle which is not necessary in the runtime path
     // compileOnly will be moved into the lib dir afterwards
     implementation 'org.jsoup:jsoup:1.11.3'
-    implementation "i5:las2peer-bundle:${project.property('core.version')}"
+    
 }
 configurations {
     // This ensures las2peer is available in the tests, but won't be bundled
@@ -45,7 +47,6 @@ configurations {
 }
 
 jar {
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     manifest {
         attributes "Main-Class": "${project.property('service.name')}.${project.property('service.class')}"
         attributes "Library-Version": "${project.property('service.version')}"
@@ -56,6 +57,7 @@ jar {
         // Exclude signatures to be able to natively bundle signed jars
         exclude 'META-INF/*.RSA', 'META-INF/*.SF', 'META-INF/*.DSA'
     }
+    duplicatesStrategy DuplicatesStrategy.INCLUDE
 }
 
 
