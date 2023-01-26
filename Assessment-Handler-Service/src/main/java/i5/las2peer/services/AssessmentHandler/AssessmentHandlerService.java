@@ -476,6 +476,7 @@ public class AssessmentHandlerService extends RESTService {
 
 				this.assessmentStarted.put(channel, null);
 				JSONObject xAPI = quiz.createXAPIForMoodle(false);
+				sendXAPIStatement(xAPI, lrsToken, lrsURL);
 				Context.get().monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_3,
 						xAPI.toString() + "*" + triggeredBody.getAsString("email"));
 				response.put("closeContext", "true");
@@ -621,6 +622,7 @@ public class AssessmentHandlerService extends RESTService {
 								+ quiz.getWrongQuestions();
 					this.assessmentStarted.put(channel, null);
 					JSONObject xAPI = quiz.createXAPIForMoodle(true);
+					sendXAPIStatement(xAPI, lrsToken, lrsURL);
 					Context.get().monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_3,
 							xAPI.toString() + "*" + triggeredBody.getAsString("email"));
 
@@ -643,6 +645,7 @@ public class AssessmentHandlerService extends RESTService {
 					answer += "Du hast folgende Fragen falsch beantwortet: \n " + quiz.getWrongQuestions();
 				this.assessmentStarted.put(channel, null);
 				JSONObject xAPI = quiz.createXAPIForMoodle(false);
+				sendXAPIStatement(xAPI, lrsToken, lrsURL);
 				Context.get().monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_3,
 						xAPI.toString() + "*" + triggeredBody.getAsString("email"));
 
@@ -790,6 +793,7 @@ public class AssessmentHandlerService extends RESTService {
 								+ quiz.getWrongQuestions();
 					this.assessmentStarted.put(channel, null);
 					JSONObject xAPI = quiz.createXAPIForMoodle(true);
+					sendXAPIStatement(xAPI, lrsToken, lrsURL);
 					Context.get().monitorEvent(MonitoringEvent.SERVICE_CUSTOM_MESSAGE_3,
 							xAPI.toString() + "*" + triggeredBody.getAsString("email"));
 					response.put("closeContext", "true");
