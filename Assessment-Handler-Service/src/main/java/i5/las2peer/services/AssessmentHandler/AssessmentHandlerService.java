@@ -1112,7 +1112,7 @@ public class AssessmentHandlerService extends RESTService {
 									actor.put("objectType", "Agent");
 									JSONObject account = new JSONObject();
 									account.put("name", encryptThisString(triggeredBody.getAsString("email")));
-									account.put("homePage", "https://moodle.tech4comp.dbis.rwth-aachen.de");
+									account.put("homePage", "https://chat.tech4comp.dbis.rwth-aachen.de");
 									actor.put("account", account);
 									JSONObject verb = new JSONObject();
 									JSONObject display = new JSONObject();
