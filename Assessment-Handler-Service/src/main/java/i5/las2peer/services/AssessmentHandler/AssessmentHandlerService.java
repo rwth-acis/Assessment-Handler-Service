@@ -3,6 +3,8 @@ package i5.las2peer.services.AssessmentHandler;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -46,6 +48,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.math.BigInteger;
 import java.util.Iterator;
 
 import org.jsoup.Jsoup;
@@ -1108,7 +1111,7 @@ public class AssessmentHandlerService extends RESTService {
 									// actor.put("mbox", "mailto:" + triggeredBody.getAsString("email"));
 									actor.put("objectType", "Agent");
 									JSONObject account = new JSONObject();
-									account.put("name", triggeredBody.getAsString("email"));
+									account.put("name", encryptThisString(triggeredBody.getAsString("email")));
 									account.put("homePage", "https://moodle.tech4comp.dbis.rwth-aachen.de");
 									actor.put("account", account);
 									JSONObject verb = new JSONObject();
@@ -1479,7 +1482,7 @@ public class AssessmentHandlerService extends RESTService {
 									// actor.put("mbox", "mailto:" + triggeredBody.getAsString("email"));
 									actor.put("objectType", "Agent");
 									JSONObject account = new JSONObject();
-									account.put("name", triggeredBody.getAsString("email"));
+									account.put("name", encryptThisString(triggeredBody.getAsString("email")));
 									account.put("homePage", "https://moodle.tech4comp.dbis.rwth-aachen.de");
 									actor.put("account", account);
 									JSONObject verb = new JSONObject();
@@ -1683,6 +1686,45 @@ public class AssessmentHandlerService extends RESTService {
 			e.printStackTrace();
 		}
 
+	}
+
+	public static String encryptThisString(String input) {
+		if (input != null) {
+			try {
+				// getInstance() method is called with algorithm SHA-384
+				MessageDigest md = MessageDigest.getInstance("SHA-384");
+
+				// digest() method is called
+				// to calculate message digest of the input string
+				// returned as array of byte
+				byte[] messageDigest = md.digest(input.getBytes());
+
+				// Convert byte array into signum representation
+				BigInteger no = new BigInteger(1, messageDigest);
+
+				// Convert message digest into hex value
+				String hashtext = no.toString(16);
+
+				// Add preceding 0s to make it 32 bit
+				try {
+					while (hashtext.getBytes("UTF-16BE").length * 8 < 1536) {
+						hashtext = "0" + hashtext;
+					}
+				} catch (Exception e) {
+					System.out.println(e);
+				}
+
+				// return the HashText
+				return hashtext;
+			}
+
+			// For specifying wrong message digest algorithms
+			catch (NoSuchAlgorithmException e) {
+				throw new RuntimeException(e);
+			}
+		} else {
+			return null;
+		}
 	}
 
 }
