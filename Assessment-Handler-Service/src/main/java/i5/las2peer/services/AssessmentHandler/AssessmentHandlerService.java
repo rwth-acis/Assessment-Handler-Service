@@ -1118,7 +1118,7 @@ public class AssessmentHandlerService extends RESTService {
 									JSONObject display = new JSONObject();
 									display.put("en-US", "completed_quiz");
 									verb.put("display", display);
-									verb.put("id", "https://w3id.org/xapi/dod-isd/verbs/completed_quiz");
+									verb.put("id", "https://tech4comp.de/xapi/verb/completed_quiz");
 									JSONObject object = new JSONObject();
 									JSONObject definition = new JSONObject();
 									JSONObject name = new JSONObject();
@@ -1489,7 +1489,7 @@ public class AssessmentHandlerService extends RESTService {
 									JSONObject display = new JSONObject();
 									display.put("en-US", "completed_quiz");
 									verb.put("display", display);
-									verb.put("id", "https://w3id.org/xapi/dod-isd/verbs/completed_quiz");
+									verb.put("id", "https://tech4comp.de/xapi/verb/completed_quiz");
 									JSONObject object = new JSONObject();
 									JSONObject definition = new JSONObject();
 									JSONObject name = new JSONObject();
