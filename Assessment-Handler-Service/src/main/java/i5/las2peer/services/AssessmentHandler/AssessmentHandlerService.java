@@ -539,7 +539,12 @@ public class AssessmentHandlerService extends RESTService {
 						}
 					} else {
 						String[] multipleAnswers = quiz.getAnswer().split(";");
-						String[] userAnswers = msg.split("\\s+");
+						String[] userAnswers = {};
+						if(msg.contains(",")){
+							userAnswers = msg.split(",");
+						} else {
+							userAnswers = msg.split("\\s+");
+						}
 						double splitMark = quiz.getMarkForCurrentQuestion() / (multipleAnswers.length - 1);
 						int numberOfCorrectAnswers = 0;
 						for (int j = 0; j < userAnswers.length; j++) {
@@ -709,7 +714,12 @@ public class AssessmentHandlerService extends RESTService {
 						}
 					} else {
 						String[] multipleAnswers = quiz.getAnswer().split(";");
-						String[] userAnswers = msg.split("\\s+");
+						String[] userAnswers = {};
+						if(msg.contains(",")){
+							userAnswers = msg.split(",");
+						} else {
+							userAnswers = msg.split("\\s+");
+						}
 						double splitMark = quiz.getMarkForCurrentQuestion() / (multipleAnswers.length - 1);
 						int numberOfCorrectAnswers = 0;
 						for (int j = 0; j < userAnswers.length; j++) {
