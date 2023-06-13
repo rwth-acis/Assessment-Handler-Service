@@ -1071,6 +1071,7 @@ public class AssessmentHandlerService extends RESTService {
 											Elements multiChoiceAnswerPossibilities = doc.getElementsByClass("answernumber");
 											for (int index = 0; index < multiChoiceAnswers.size(); index++) {
 												Element item = multiChoiceAnswers.get(index);
+												System.out.println(item.text() + "\n");
 												item.text(multiChoiceAnswerPossibilities.get(index).text() +" "+ item.text());
 												assessment[k][3] += " • " + item.text() + " \n";
 												System.out.println(item.text() + "\n");
@@ -1087,7 +1088,6 @@ public class AssessmentHandlerService extends RESTService {
 														}
 													} else {
 														System.out.println("correct answer is: " + assessment[k][1]);
-														System.out.println(item.text());
 														if (item.text().contains(assessment[k][1])) {
 															assessment[k][4] += item.text().split("\\.")[0] + " ; ";
 															// System.out.println("asskeement is :2" +
