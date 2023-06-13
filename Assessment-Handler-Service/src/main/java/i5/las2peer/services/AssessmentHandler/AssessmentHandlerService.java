@@ -1084,6 +1084,7 @@ public class AssessmentHandlerService extends RESTService {
 														}
 													} else {
 														System.out.println("correct answer is: " + assessment[k][1]);
+														System.out.println(item.text());
 														if (item.text().split("\\.", 2)[1].contains(assessment[k][1])) {
 															assessment[k][4] += item.text().split("\\.")[0] + " ; ";
 															// System.out.println("asskeement is :2" +
