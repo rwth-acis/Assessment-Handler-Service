@@ -1072,7 +1072,9 @@ public class AssessmentHandlerService extends RESTService {
 											for (int index = 0; index < multiChoiceAnswers.size(); index++) {
 												Element item = multiChoiceAnswers.get(index);
 												System.out.println(item.text() + "\n");
-												item.text(multiChoiceAnswerPossibilities.get(index).text() +" "+ item.text());
+												if(multiChoiceAnswerPossibilities.size() != 0){
+													item.text(multiChoiceAnswerPossibilities.get(index).text() +" "+ item.text());
+												}		
 												assessment[k][3] += " • " + item.text() + " \n";
 												System.out.println(item.text() + "\n");
 												if (assessment[k][2].equals("multichoice")) {
