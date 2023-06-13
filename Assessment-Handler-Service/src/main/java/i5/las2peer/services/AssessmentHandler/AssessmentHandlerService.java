@@ -1068,8 +1068,10 @@ public class AssessmentHandlerService extends RESTService {
 												|| assessment[k][2].equals("truefalse")) {
 											// check if answers or answer here ?
 											Elements multiChoiceAnswers = doc.getElementsByClass("ml-1");
-											System.out.println(multiChoiceAnswers.toString());
-											for (Element item : multiChoiceAnswers) {
+											Elements multiChoiceAnswerPossibilities = doc.getElementsByClass("answernumber");
+											for (int index = 0; index < multiChoiceAnswers.size(); index++) {
+												Element item = multiChoiceAnswers.get(index);
+												item.text(multiChoiceAnswerPossibilities.text() + item.text());
 												assessment[k][3] += " • " + item.text() + " \n";
 												System.out.println(item.text() + "\n");
 												if (assessment[k][2].equals("multichoice")) {
